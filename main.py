@@ -151,9 +151,9 @@ def generar_menu_principal():
     ])
 
 async def main():
-    await cargar_datos()
+    cargar_datos()
     await app.start()
-    await setup_autoguardado(guardar_datos)
+    setup_autoguardado(guardar_datos)
     print("Bot iniciado y operativo.")
     await asyncio.Event().wait()
 
