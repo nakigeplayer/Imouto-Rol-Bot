@@ -1,0 +1,157 @@
+# -*- coding: utf-8 -*-
+# coding: utf-8
+
+
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
+from modelo import inicializar_usuario, estado_hermana, consumir_item, agregar_item
+from tienda import productos, comprar_producto
+from tiempo import avanzar_tiempo, formato_tiempo
+from persistencia import guardar_datos, cargar_datos, setup_autoguardado
+from datetime import datetime
+import os
+import json
+from dotenv import load_dotenv
+
+load_dotenv()
+
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+app = Client("hermanita_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+
+@app.on_message(filters.command("start"))
+def start(_, message):
+    user = message.from_user
+    estado = inicializar_usuario(user.id)
+    reply_markup = generar_menu_principal()
+    message.reply_text(f"隆Hola, {user.first_name}! Comienza tu d铆a cuidando a tu hermanita 馃", reply_markup=reply_markup)
+
+@app.on_message(filters.command("load") & filters.reply)
+def cargar_json(_, message: Message):
+    if not message.reply_to_message.document:
+        message.reply_text("Responde a un archivo .json v谩lido.")
+        return
+    archivo = message.reply_to_message.document
+    if not archivo.file_name.endswith(".json"):
+        message.reply_text("El archivo debe ser formato .json.")
+        return
+
+    ruta = f"carga_{message.from_user.id}.json"
+    archivo.download(ruta)
+
+    try:
+        with open(ruta, "r") as f:
+            datos = json.load(f)
+        for uid, estado in datos.items():
+            estado["hora"] = datetime.fromisoformat(estado["hora"])
+            estado_hermana[int(uid)] = estado
+        message.reply_text("鉁� Datos cargados correctamente.")
+    except Exception as e:
+        message.reply_text(f"鉂� Error al cargar: {e}")
+    finally:
+        os.remove(ruta)
+
+@app.on_callback_query()
+def responder(_, query):
+    uid = query.from_user.id
+    estado = estado_hermana[uid]
+    accion = query.data
+    respuesta = ""
+
+    if accion == "volver":
+        query.message.edit_text("Elige una acci贸n:", reply_markup=generar_menu_principal())
+        return
+
+    if accion == "estado":
+        respuesta = (
+            f"馃搳 Estado de tu hermanita:\n"
+            f"馃崡 Hambre: {estado['hambre']}\n"
+            f"馃巿 脕nimo: {estado['animo']}\n"
+            f"馃槉 Felicidad: {estado['felicidad']}\n"
+            f"鈿� Energ铆a: {estado['energia']}\n"
+            f"馃挵 Dinero: ${estado['dinero']}\n"
+            + formato_tiempo(uid)
+        )
+
+    elif accion == "dormir":
+        if estado["energia"] >= 100:
+            respuesta = "La hermanita no tiene sue帽o a煤n 馃槍"
+        else:
+            estado["energia"] = 100
+            estado["hambre"] += 10
+            respuesta = "Tu hermanita durmi贸 profundamente 馃槾 y recuper贸 energ铆a."
+
+    elif accion == "jugar":
+        if estado["energia"] < 15 and estado["hora"].hour >= 22:
+            respuesta = "La hermana est谩 muy cansada 馃槾. Solo quiere dormir."
+        else:
+            estado["animo"] += 15
+            estado["energia"] -= 10
+            respuesta = "Jugaron juntas 馃幃 y se divirtieron bastante."
+
+    elif accion == "comer_menu":
+        botones = [
+            [InlineKeyboardButton(f"{item} x{cantidad}", callback_data=f"comer_{item}")]
+            for item, cantidad in estado["inventario"].items() if cantidad > 0
+        ]
+        if not botones:
+            botones = [[InlineKeyboardButton("Inventario vac铆o", callback_data="volver")]]
+        botones.append([InlineKeyboardButton("猬咃笍 Volver", callback_data="volver")])
+        query.message.edit_text("馃嵔锔� 驴Qu茅 deseas darle de comer?", reply_markup=InlineKeyboardMarkup(botones))
+        return
+
+    elif accion.startswith("comer_"):
+        item = accion.replace("comer_", "")
+        resultado = consumir_item(uid, item)
+        if not resultado:
+            respuesta = "No tienes esa comida 馃嵔锔�"
+        else:
+            efecto = productos.get(item)
+            if not efecto:
+                respuesta = f"{item} fue consumido, pero no caus贸 efecto."
+            else:
+                texto_efecto = ""
+                for atributo, delta in efecto["efecto"].items():
+                    estado[atributo] = max(0, min(100, estado[atributo] + delta))
+                    texto_efecto += f" {atributo.capitalize()} {delta:+d}"
+                respuesta = f"Tu hermanita comi贸 {item} 馃嵈.{texto_efecto}"
+
+    elif accion == "comprar_menu":
+        botones = [
+            [InlineKeyboardButton(f"{item} - ${info['precio']}", callback_data=f"buy_{item}")]
+            for item, info in productos.items()
+        ]
+        botones.append([InlineKeyboardButton("猬咃笍 Volver", callback_data="volver")])
+        query.message.edit_text("馃泹锔� 驴Qu茅 quieres comprar?", reply_markup=InlineKeyboardMarkup(botones))
+        return
+
+    elif accion.startswith("buy_"):
+        nombre = accion.replace("buy_", "")
+        respuesta = comprar_producto(uid, nombre, estado)
+
+    else:
+        respuesta = "Comando no reconocido."
+
+    avanzar_tiempo(uid)
+    guardar_datos()
+    query.answer()
+    query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=generar_menu_principal())
+
+def generar_menu_principal():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("馃幃 Jugar", callback_data="jugar")],
+        [InlineKeyboardButton("馃嵔锔� Comer", callback_data="comer_menu")],
+        [InlineKeyboardButton("馃泹锔� Compra Online", callback_data="comprar_menu")],
+        [InlineKeyboardButton("馃槾 Dormir", callback_data="dormir")],
+        [InlineKeyboardButton("馃憗锔� Ver Estado", callback_data="estado")]
+    ])
+
+if __name__ == "__main__":
+    cargar_datos()
+    app.start()
+    setup_autoguardado(guardar_datos)
+    print("Bot en marcha. Presiona Ctrl+C para detener.")
+    app.idle()
+    
