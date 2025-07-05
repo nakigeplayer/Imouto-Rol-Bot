@@ -17,7 +17,7 @@ def estado_inicial():
             "sopa instantánea": 1,
             "caramelo": 1
         },
-        "dinero": 1000
+        "dinero": 5000
     }
 
 def inicializar_usuario(user_id):
