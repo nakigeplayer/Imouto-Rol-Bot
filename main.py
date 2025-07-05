@@ -12,7 +12,9 @@ from datetime import datetime
 import os
 import json
 from dotenv import load_dotenv
-
+import asyncio
+import nest_asyncio
+nest_asyncio.apply()
 load_dotenv()
 
 API_ID = int(os.getenv("API_ID"))
@@ -148,10 +150,15 @@ def generar_menu_principal():
         [InlineKeyboardButton("Ver Estado", callback_data="estado")]
     ])
 
+async def main():
+    await cargar_datos()
+    await app.start()
+    await setup_autoguardado(guardar_datos)
+    print("Bot iniciado y operativo.")
+    await asyncio.Event().wait()
+
 if __name__ == "__main__":
-    cargar_datos()
-    app.start()
-    setup_autoguardado(guardar_datos)
-    print("Bot en marcha. Presiona Ctrl+C para detener.")
-    app.idle()
-    
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Detención forzada realizada")
