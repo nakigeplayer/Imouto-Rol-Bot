@@ -16,7 +16,7 @@ nest_asyncio.apply()
 from menu_query import manejar_callback, generar_menu_principal, actualizar_aburrimiento
 from comandos_save import registrar_handlers_save
 from comandos_load import registrar_handlers_load
-from sexo_cmd import manejar_acto, generar_menu, iniciar_acto, actualizar_progresos, detener_actualizacion
+from sexo import manejar_acto, generar_menu, iniciar_acto, actualizar_progresos, detener_actualizacion
 
 # Variables de entorno
 load_dotenv()
