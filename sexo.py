@@ -227,7 +227,7 @@ async def manejar_acto(app, query):
 
     elif acto["molestia_chica"] >= 100:
         mensaje = "Tu hermana se enojo contigo"
-        estado["felicidad"] = estado["felicidad"] - 
+        estado["felicidad"] = estado["felicidad"] - random.randint(80, 100)
         estado["animo"] = estado["animo"] - random.randint(80, 100)
         await callback_query.edit_message_text(mensaje)
         usuarios_acto.pop(uid, None)
