@@ -5,6 +5,7 @@ from tiempo import avanzar_tiempo, formato_tiempo, avanzar_tiempo_noche
 from persistencia import guardar_datos
 from datetime import datetime
 import random
+from sexo import usuarios_acto
 from textos import (
     JUGO_EXITOSO, NO_QUIERE_JUGAR, CONVERSACION,
     COMIO, NO_HAY_HAMBRE, aleatorio
@@ -104,6 +105,7 @@ async def manejar_callback(app, query):
             return
 
     elif accion == "dormir_confirm":
+        usuarios_acto.pop(uid, None) #Elimina progreso del sexo si lo había
         estado["energia"] += 100
         estado["hambre"] += 10
         estado["animo"] -= random.randint(50, 100)
