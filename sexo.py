@@ -105,6 +105,8 @@ def generar_menu(uid):
         botones.append([InlineKeyboardButton("Rozar vagina", callback_data="rozar_vagina")])
         botones.append([InlineKeyboardButton("Penetrar", callback_data="penetrar")])
 
+    botones.append([InlineKeyboardButton("Ir a dormir", callback_data="dormir_confirm")])
+
     return InlineKeyboardMarkup(botones)
 
 # --- Manejador de Callbacks ---
