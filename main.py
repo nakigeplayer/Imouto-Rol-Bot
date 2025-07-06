@@ -18,7 +18,7 @@ from comandos_save import registrar_handlers_save
 from comandos_load import registrar_handlers_load
 from sexo import manejar_acto, generar_menu, iniciar_acto, actualizar_progresos, detener_actualizacion
 # main.py
-from estado_actos import marcar_acto_terminado, marcar_acto_activo, actos_en_progreso
+from acto import marcar_acto_terminado, marcar_acto_activo, actos_en_progreso
 
 # Variables de entorno
 load_dotenv()
