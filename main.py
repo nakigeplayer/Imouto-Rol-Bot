@@ -153,10 +153,15 @@ def generar_menu_principal():
         [InlineKeyboardButton("Ver Estado", callback_data="estado")]
     ])
 
-if __name__ == "__main__":
+async def main():
     cargar_datos()
-    app.start()
+    await app.start()
     setup_autoguardado(guardar_datos)
-    print("Bot en marcha. Presiona Ctrl+C para detener.")
-    app.idle()
-    
+    print("Bot iniciado y operativo.")
+    await asyncio.Event().wait()
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Detención forzada realizada")
