@@ -88,7 +88,7 @@ async def actualizar_progresos():
 
                 acto["molestia_chica"] = min(
                     100,
-                    acto["molestia_chica"] + ((acto["mult_molestia"] + acto["mult_molestia2"]) / 2 * )
+                    acto["molestia_chica"] + ((acto["mult_molestia"] + acto["mult_molestia2"]) / 2)
                 )
 
                 if not acto["despierta"] and random.random() < (100 - estado["energia"]) / 200:
