@@ -49,7 +49,7 @@ registrar_handlers_load(app)
 
 # Acciones estáticas del menú principal
 ACCIONES_MENU = {
-    "jugar", "conversar", "comer_menu", "comprar_menu", "dormir", "estado", "volver"
+    "jugar", "conversar", "comer_menu", "comprar_menu", "dormir", "estado", "volver", "ir_escuela"
 }
 
 # Verifica si la acción pertenece al menú principal o es una acción dinámica
