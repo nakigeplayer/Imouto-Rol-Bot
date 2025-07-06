@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# coding: utf-8
-
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 from modelo import inicializar_usuario, estado_hermana, consumir_item
@@ -18,19 +16,20 @@ nest_asyncio.apply()
 from menu_query import manejar_callback, generar_menu_principal, actualizar_aburrimiento
 from comandos_save import registrar_handlers_save
 from comandos_load import registrar_handlers_load
-from sexo import manejar_acto, generar_menu, iniciar_acto, actualizar_progresos
-from sexo import manejar_acto, detener_actualizacion
+from sexo import manejar_acto, generar_menu, iniciar_acto, actualizar_progresos, detener_actualizacion
 
-
+# Variables de entorno
 load_dotenv()
-
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
+# Cliente del bot
 app = Client("hermanita_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+# Registro de aburrimiento y actos activos
 aburrimiento = {}
+actos_en_progreso = set()
 
 def actualizar_aburrimiento(uid, accion):
     if uid not in aburrimiento:
@@ -39,22 +38,31 @@ def actualizar_aburrimiento(uid, accion):
     if random.randint(1, 100) <= aburrimiento[uid][accion]:
         aburrimiento[uid][accion] = 100
 
+# Comando /start
 @app.on_message(filters.command("start"))
 def start(_, message):
     user = message.from_user
-    inicializar_usuario(user.id)
-    reply_markup = generar_menu_principal()
-    message.reply_text(f"¡Hola, {user.first_name}! Comienza tu día cuidando a tu hermanita", reply_markup=reply_markup)
+    uid = user.id
+    inicializar_usuario(uid)
 
+    if uid in actos_en_progreso:
+        message.reply_text("Tu hermanita está ocupada en algo especial ahora. Espera a que termine…")
+    else:
+        reply_markup = generar_menu_principal()
+        message.reply_text(
+            f"¡Hola, {user.first_name}! Comienza tu día cuidando a tu hermanita",
+            reply_markup=reply_markup
+        )
+
+# Registro de funciones externas
 registrar_handlers_save(app)
 registrar_handlers_load(app)
 
-# Acciones estáticas del menú principal
+# Acciones del menú principal
 ACCIONES_MENU = {
     "jugar", "conversar", "comer_menu", "comprar_menu", "estado", "volver", "ir_escuela"
 }
 
-# Verifica si la acción pertenece al menú principal o es una acción dinámica
 def es_callback_menu(data):
     return (
         data in ACCIONES_MENU
@@ -69,10 +77,16 @@ async def responder(app, query):
     if es_callback_menu(accion):
         await manejar_callback(app, query)
     else:
-        await manejar_acto(app, query)# Aquí puedes enrutar otros callbacks personalizados, si los defines aparte
-        #query.answer("Esta acción será manejada en otro módulo.", show_alert=True)
+        await manejar_acto(app, query)
 
-    
+# Para marcar inicio y fin de actos
+def marcar_acto_activo(user_id):
+    actos_en_progreso.add(user_id)
+
+def marcar_acto_terminado(user_id):
+    actos_en_progreso.discard(user_id)
+
+# Lógica principal del bot
 async def main():
     cargar_datos()
     await app.start()
