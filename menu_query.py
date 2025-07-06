@@ -195,8 +195,9 @@ async def manejar_callback(app, query):
 
     else:
         respuesta = "Comando no reconocido."
-
+        
     await guardar_datos()
     await query.answer()
-    await query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=teclado_volver)
-    await query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=teclado_volver)
+    tiempo = await formato_tiempo(uid)
+    await query.message.edit_text(respuesta + "\n" + tiempo, reply_markup=teclado_volver)
+
