@@ -42,6 +42,40 @@ def manejar_callback(app, query):
     hambre = estado["hambre"]
     respuesta = ""
 
+    # 🏫 Restricción de opciones a las 07:30 de lunes a viernes
+    if estado["dia_num"] <= 4 and estado["hora"].hour == 7 and estado["hora"].minute == 30:
+        if accion == "ir_escuela":
+            estado["energia"] -= 25
+            estado["animo"] -= 10
+            estado["felicidad"] += 15
+            avanzar_tiempo(uid)
+            respuesta = "Tu hermanita fue a clases y aprendió mucho 📚"
+        elif accion == "estado":
+            respuesta = (
+                f"Estado de tu hermanita:\n"
+                f"Hambre: {estado['hambre']}\n"
+                f"Ánimo: {estado['animo']}\n"
+                f"Felicidad: {estado['felicidad']}\n"
+                f"Energía: {estado['energia']}\n"
+                f"Dinero: ${estado['dinero']}\n" + formato_tiempo(uid)
+            )
+        else:
+            query.answer()
+            query.message.edit_text(
+                "A esta hora solo puedes ir a la escuela 🏫 o revisar el estado 📋.",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🏫 Ir a la escuela", callback_data="ir_escuela")],
+                    [InlineKeyboardButton("📋 Ver Estado", callback_data="estado")]
+                ])
+            )
+            return
+
+        guardar_datos()
+        query.answer()
+        query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=teclado_volver)
+        return
+
+    # --- resto de acciones normales abajo ---
     if accion == "volver":
         query.message.edit_text("Elige una acción:", reply_markup=generar_menu_principal())
         return
@@ -78,10 +112,7 @@ def manejar_callback(app, query):
         elif estado["energia"] < 15 or estado["hora"].hour >= 22:
             respuesta = "La hermana está muy cansada. Solo quiere dormir."
         else:
-            if random.random() < 0.05:
-                delta_animo = -random.randint(2, 5)
-            else:
-                delta_animo = random.randint(10, 20)
+            delta_animo = -random.randint(2, 5) if random.random() < 0.05 else random.randint(10, 20)
             estado["animo"] += delta_animo
             estado["energia"] -= 10
             avanzar_tiempo(uid)
@@ -132,7 +163,7 @@ def manejar_callback(app, query):
             texto_efecto = ""
             if efecto:
                 for atributo, delta in efecto["efecto"].items():
-                    estado[atributo] = estado[atributo] + delta
+                    estado[atributo] += delta
                     texto_efecto += f" {atributo.capitalize()} {delta:+d}"
             avanzar_tiempo(uid)
             respuesta = aleatorio(COMIO).format(item=item) + (texto_efecto or "")
