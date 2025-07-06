@@ -1,0 +1,176 @@
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from datetime import datetime, timedelta
+import random
+import asyncio
+from modelo import inicializar_usuario, estado_hermana, consumir_item
+
+# --- Estados del Juego ---
+usuarios = {}  # Guarda ánimo, felicidad, energía
+usuarios_acto = {}  # Guarda progresos durante el acto
+
+def estado_inicial():
+    return {
+        "animo": 70,
+        "felicidad": 60,
+        "energia": 80
+    }
+
+def iniciar_acto():
+    return {
+        "exitacion_jugador": 0,
+        "exitacion_chica": 0,
+        "molestia_chica": 0,
+        "mult_jugador": 1.0,
+        "mult_chica": 1.0,
+        "mult_molestia": 1.0,
+        "despierta": False,
+        "ropa": {
+            "blusa": True,
+            "falda": True,
+            "pantis": True,
+            "piernas_abiertas": False
+        },
+        "last_update": datetime.now()
+    }
+
+# --- Actualización Automática (Cada 5 segundos) ---
+async def actualizar_progresos():
+    while True:
+        await asyncio.sleep(5)
+        now = datetime.now()
+        for uid, acto in usuarios_acto.items():
+            # Calcular tiempo transcurrido
+            elapsed = (now - acto["last_update"]).total_seconds()
+            if elapsed < 5:
+                continue
+
+            # estado del usuario
+            estado = estado_hermana[uid]
+
+            # Actualizar valores
+            acto["exitacion_jugador"] = min(100, acto["exitacion_jugador"] + acto["mult_jugador"])
+            
+            if acto["despierta"]:
+                acto["exitacion_chica"] = min(100, acto["exitacion_chica"] + acto["mult_chica"] * (1 + estado["animo"]/100 + estado["felicidad"]/100))
+            
+            acto["molestia_chica"] = min(100, acto["molestia_chica"] + acto["mult_molestia"] * (1 - estado["animo"]/200 - estado["felicidad"]/200))
+
+            # Probabilidad de despertar (inversa a energía)
+            if not acto["despierta"] and random.random() < (100 - estado["energia"]) / 200:
+                acto["despierta"] = True
+
+            acto["last_update"] = now
+
+# --- Generar Menú ---
+def generar_menu(uid):
+    acto = usuarios_acto.get(uid, iniciar_acto())
+    botones = []
+
+    # Opciones siempre disponibles
+    botones.append([InlineKeyboardButton("Masturbarse", callback_data="masturbar_jugador")])
+
+    # Opciones de desvestir
+    if acto["ropa"]["blusa"] or acto["ropa"]["falda"] or acto["ropa"]["pantis"]:
+        botones.append([InlineKeyboardButton("Desvestir", callback_data="desvestir_menu")])
+
+    # Tocar pechos (solo sin blusa)
+    if not acto["ropa"]["blusa"]:
+        botones.append([InlineKeyboardButton("Tocar pechos", callback_data="tocar_pechos")])
+
+    # Masturbación (solo sin falda)
+    if not acto["ropa"]["falda"]:
+        botones.append([InlineKeyboardButton("Masturbarla", callback_data="masturbar_chica")])
+
+    # Abrir piernas (solo si están cerradas)
+    if not acto["ropa"]["piernas_abiertas"]:
+        botones.append([InlineKeyboardButton("Abrir piernas", callback_data="abrir_piernas")])
+    elif not acto["ropa"]["pantis"]:  # Opciones avanzadas
+        botones.append([InlineKeyboardButton("Rozar vagina", callback_data="rozar_vagina")])
+        botones.append([InlineKeyboardButton("Penetrar", callback_data="penetrar")])
+
+    return InlineKeyboardMarkup(botones)
+
+# --- Manejador de Callbacks ---
+def manejar_acto(app, query):
+    uid = query.from_user.id
+    if uid not in estado_hermana:
+        query.answer("Primero usa /start para comenzar.")
+        return
+
+    estado = estado_hermana[uid]
+    acto = usuarios_acto[uid]
+
+    # Procesar acciones
+    if data == "masturbar_jugador":
+        acto["mult_jugador"] += 0.2
+
+    elif data == "tocar_pechos":
+        if acto["ropa"]["blusa"]:
+            acto["mult_molestia"] += 0.3
+        else:
+            acto["mult_chica"] += 0.2
+
+    elif data == "masturbar_chica":
+        if acto["ropa"]["pantis"]:
+            acto["mult_molestia"] += 0.4
+        else:
+            acto["mult_chica"] += 0.5 if acto["ropa"]["piernas_abiertas"] else 0.3
+
+    elif data == "abrir_piernas":
+        acto["ropa"]["piernas_abiertas"] = True
+        acto["mult_molestia"] += 0.2
+
+    elif data == "rozar_vagina":
+        acto["mult_jugador"] += 0.4
+        acto["mult_chica"] += 0.3
+
+    elif data == "penetrar":
+        acto["mult_jugador"] += 0.8
+        acto["mult_chica"] += 0.6
+
+    elif data == "desvestir_menu":
+        # Submenú de desvestir
+        submenu = []
+        if acto["ropa"]["blusa"]:
+            submenu.append([InlineKeyboardButton("Quitar blusa", callback_data="quitar_blusa")])
+        if acto["ropa"]["falda"]:
+            submenu.append([InlineKeyboardButton("Quitar falda", callback_data="quitar_falda")])
+        elif acto["ropa"]["pantis"]:
+            submenu.append([InlineKeyboardButton("Quitar pantis", callback_data="quitar_pantis")])
+        
+        await callback_query.edit_message_text(
+            "Elige qué quitar:",
+            reply_markup=InlineKeyboardMarkup(submenu)
+        )
+        return
+
+    elif data.startswith("quitar_"):
+        item = data.split("_")[1]
+        acto["ropa"][item] = False
+        acto["mult_molestia"] += 0.1
+
+    # Verificar condiciones de fin
+    mensaje = None
+    if acto["exitacion_jugador"] >= 100:
+        mensaje = "Has llegado al clímax. Fin del juego."
+    elif acto["exitacion_chica"] >= 100:
+        mensaje = "La chica tuvo un orgasmo. ¡Éxito!"
+    elif acto["molestia_chica"] >= 100:
+        mensaje = "La chica está demasiado molesta. Fin del juego."
+
+    if mensaje:
+        await callback_query.edit_message_text(mensaje)
+        usuarios_acto.pop(uid, None)
+    else:
+        # Actualizar mensaje
+        texto = (
+            f"Exitación Jugador: {acto['exitacion_jugador']:.1f}%\n"
+            f"Exitación Chica: {acto['exitacion_chica']:.1f}%\n"
+            f"Molestia Chica: {acto['molestia_chica']:.1f}%\n"
+            f"Estado: {'Despierta' if acto['despierta'] else 'Dormida'}"
+        )
+        await callback_query.edit_message_text(
+            texto,
+            reply_markup=generar_menu(uid)
+        )
