@@ -103,6 +103,7 @@ async def manejar_acto(app, query):
         usuarios_acto[uid] = iniciar_acto()
         
     acto = usuarios_acto[uid]
+    data = query.data
     
     if data == "acto_start":
         generar_menu(uid)
