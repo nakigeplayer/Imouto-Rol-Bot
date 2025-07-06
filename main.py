@@ -19,6 +19,7 @@ from menu_query import manejar_callback, generar_menu_principal, actualizar_abur
 from comandos_save import registrar_handlers_save
 from comandos_load import registrar_handlers_load
 from sexo import manejar_acto, generar_menu, iniciar_acto, actualizar_progresos
+from sexo import manejar_acto, detener_actualizacion
 
 
 load_dotenv()
