@@ -48,6 +48,11 @@ productos = {
         "efecto": {"felicidad": 20},
         "probabilidad": 0.7,
         "rebote": -5
+    },
+    "te relajante": {
+        "precio": 200,
+        "efecto: {"energia": -20}
+        
     }
 }
 
