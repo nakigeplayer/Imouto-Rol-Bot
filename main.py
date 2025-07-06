@@ -19,8 +19,6 @@ from menu_query import manejar_callback, generar_menu_principal, actualizar_abur
 from comandos_save import registrar_handlers_save
 from comandos_load import registrar_handlers_load
 
-registrar_handlers_save(app)
-registrar_handlers_load(app)
 
 load_dotenv()
 
@@ -46,6 +44,8 @@ def start(_, message):
     reply_markup = generar_menu_principal()
     message.reply_text(f"¡Hola, {user.first_name}! Comienza tu día cuidando a tu hermanita", reply_markup=reply_markup)
 
+registrar_handlers_save(app)
+registrar_handlers_load(app)
 
 # Acciones estáticas del menú principal
 ACCIONES_MENU = {
