@@ -17,6 +17,8 @@ from menu_query import manejar_callback, generar_menu_principal, actualizar_abur
 from comandos_save import registrar_handlers_save
 from comandos_load import registrar_handlers_load
 from sexo import manejar_acto, generar_menu, iniciar_acto, actualizar_progresos, detener_actualizacion
+# main.py
+from estado_actos import marcar_acto_terminado, marcar_acto_activo, actos_en_progreso
 
 # Variables de entorno
 load_dotenv()
@@ -76,19 +78,13 @@ async def responder(app, query):
     user = query.from_user
     uid = user.id
     accion = query.data
+
     if es_callback_menu(accion):
         await manejar_callback(app, query)
         marcar_acto_terminado(uid)
     else:
         await manejar_acto(app, query)
         marcar_acto_activo(uid)
-
-# Para marcar inicio y fin de actos
-def marcar_acto_activo(user_id):
-    actos_en_progreso.add(user_id)
-
-def marcar_acto_terminado(user_id):
-    actos_en_progreso.discard(user_id)
 
 # Lógica principal del bot
 async def main():
