@@ -94,7 +94,7 @@ def generar_menu(uid):
 # --- Manejador de Callbacks ---
 async def manejar_acto(app, query):
     uid = query.from_user.id
-    if uid not in estado_hermana:
+    if uid not in estado_hermana: 
         query.answer("Primero usa /start para comenzar.")
         return
 
