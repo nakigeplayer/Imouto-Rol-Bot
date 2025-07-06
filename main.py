@@ -12,6 +12,8 @@ from datetime import datetime
 import os
 import json
 from dotenv import load_dotenv
+import asyncio
+nest_asyncio.apply()
 
 load_dotenv()
 
