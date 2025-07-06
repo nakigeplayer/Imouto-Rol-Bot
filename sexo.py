@@ -1,5 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.errors import MessageNotModified
+
 from datetime import datetime, timedelta
 import random
 import asyncio
@@ -178,7 +180,16 @@ async def manejar_acto(app, query):
             f"Molestia Chica: {acto['molestia_chica']:.1f}%\n"
             f"Estado: {'Despierta' if acto['despierta'] else 'Dormida'}"
         )
-        await callback_query.edit_message_text(
-            texto,
-            reply_markup=generar_menu(uid)
-        )
+        try:
+            await callback_query.edit_message_text(
+                texto,
+                reply_markup=generar_menu(uid)
+            )
+        except MessageNotModified:
+            # Añadir un punto o espacio para forzar la modificación del mensaje
+            texto_modificado = texto + "." if not texto.endswith(".") else texto + " "
+            await callback_query.edit_message_text(
+                texto_modificado,
+                reply_markup=generar_menu(uid)
+            )
+
