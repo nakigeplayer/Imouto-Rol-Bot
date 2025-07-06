@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import random
 import asyncio
 from modelo import inicializar_usuario, estado_hermana, consumir_item
-from estado_actos import marcar_acto_terminado
+from acto import marcar_acto_terminado
 
 # --- Estados del Juego ---
 usuarios = {}  # Guarda ánimo, felicidad, energía
