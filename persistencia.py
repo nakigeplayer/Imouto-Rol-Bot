@@ -6,7 +6,7 @@ from modelo import estado_hermana
 
 ARCHIVO_DATOS = "estado_hermana.json"
 
-def guardar_datos():
+async def guardar_datos():
     """Guarda el estado de todos los usuarios a un archivo JSON."""
     datos = {}
     for uid, estado in estado_hermana.items():
