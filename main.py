@@ -73,11 +73,14 @@ def es_callback_menu(data):
 
 @app.on_callback_query()
 async def responder(app, query):
+    uid = user.id
     accion = query.data
     if es_callback_menu(accion):
         await manejar_callback(app, query)
+        marcar_acto_terminado(uid)
     else:
         await manejar_acto(app, query)
+        marcar_acto_activo(uid)
 
 # Para marcar inicio y fin de actos
 def marcar_acto_activo(user_id):
