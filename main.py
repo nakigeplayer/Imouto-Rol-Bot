@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 import asyncio
 import nest_asyncio
 nest_asyncio.apply()
-
+from menu_query import manejar_callback, generar_menu_principal, actualizar_aburrimiento
 load_dotenv()
 
 API_ID = int(os.getenv("API_ID"))
@@ -64,9 +64,6 @@ def cargar_json(_, message: Message):
         message.reply_text(f"Error al cargar: {e}")
     finally:
         os.remove(ruta)
-
-
-from menu_query import manejar_callback
 
 @app.on_callback_query()
 def responder(app, query):
