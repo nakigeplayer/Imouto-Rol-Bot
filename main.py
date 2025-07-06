@@ -16,6 +16,12 @@ import asyncio
 import nest_asyncio
 nest_asyncio.apply()
 from menu_query import manejar_callback, generar_menu_principal, actualizar_aburrimiento
+from comandos_save import registrar_handlers_save
+from comandos_load import registrar_handlers_load
+
+registrar_handlers_save(app)
+registrar_handlers_load(app)
+
 load_dotenv()
 
 API_ID = int(os.getenv("API_ID"))
@@ -40,30 +46,6 @@ def start(_, message):
     reply_markup = generar_menu_principal()
     message.reply_text(f"¡Hola, {user.first_name}! Comienza tu día cuidando a tu hermanita", reply_markup=reply_markup)
 
-@app.on_message(filters.command("load") & filters.reply)
-def cargar_json(_, message: Message):
-    if not message.reply_to_message.document:
-        message.reply_text("Responde a un archivo .json válido.")
-        return
-    archivo = message.reply_to_message.document
-    if not archivo.file_name.endswith(".json"):
-        message.reply_text("El archivo debe ser formato .json.")
-        return
-
-    ruta = f"carga_{message.from_user.id}.json"
-    archivo.download(ruta)
-
-    try:
-        with open(ruta, "r") as f:
-            datos = json.load(f)
-        for uid, estado in datos.items():
-            estado["hora"] = datetime.fromisoformat(estado["hora"])
-            estado_hermana[int(uid)] = estado
-        message.reply_text("Datos cargados correctamente.")
-    except Exception as e:
-        message.reply_text(f"Error al cargar: {e}")
-    finally:
-        os.remove(ruta)
 
 # Acciones estáticas del menú principal
 ACCIONES_MENU = {
