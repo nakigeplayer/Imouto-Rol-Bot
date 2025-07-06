@@ -149,11 +149,12 @@ async def manejar_callback(app, query):
             respuesta = aleatorio(CONVERSACION)
 
     elif accion == "comer_menu":
+        
         botones = [
             [InlineKeyboardButton(f"{item} x{cantidad}", callback_data=f"comer_{item}")]
             for item, cantidad in estado["inventario"].items() if cantidad > 0
         ]
-        if estado["hambre"] == 0 or estado["hora"].hour >= 22:
+        if estado["hambre"] <= 15 or estado["hora"].hour >= 22:
             respuesta = aleatorio(NO_HAY_HAMBRE)
         if not botones:
             botones = [[InlineKeyboardButton("Inventario vacío", callback_data="volver")]]
