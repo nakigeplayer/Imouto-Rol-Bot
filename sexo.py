@@ -99,7 +99,10 @@ async def manejar_acto(app, query):
         return
 
     estado = estado_hermana[uid]
-    acto = usuarios_acto.get(uid, iniciar_acto())
+    if uid not in usuarios_acto:
+        usuarios_acto[uid] = iniciar_acto()
+        
+    acto = usuarios_acto[uid]
     
     if data == "acto_start":
         generar_menu(uid)
