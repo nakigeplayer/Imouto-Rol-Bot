@@ -73,7 +73,7 @@ async def actualizar_progresos():
                 acto["mult_chica2"] = ((temp_animo + temp_felicidad) / 2) + ((div_animo + div_felicidad) / 2)
 
                 # mult_molestia2
-                acto["mult_molestia2"] = ((div_felicidad + div_animo) / 2) + ((5 - abs((temp_felicidad)) + (5 - abs(temp_animo)) * 2))
+                acto["mult_molestia2"] = ((5 - abs((temp_felicidad)) + (5 - abs(temp_animo))) / 2 ) - ((div_felicidad + div_animo) / 2)
                 
                                                                               
                 acto["exitacion_jugador"] = min(100, acto["exitacion_jugador"] + acto["mult_jugador"])
