@@ -1,4 +1,4 @@
-from pyrogram import Client, filters
+from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import MessageNotModified
 
@@ -10,6 +10,7 @@ from modelo import inicializar_usuario, estado_hermana, consumir_item
 # --- Estados del Juego ---
 usuarios = {}  # Guarda ánimo, felicidad, energía
 usuarios_acto = {}  # Guarda progresos durante el acto
+tarea_actualizacion = None  # Variable global para la tarea de actualización
 
 def estado_inicial():
     return {
@@ -39,30 +40,43 @@ def iniciar_acto():
 # --- Actualización Automática (Cada 5 segundos) ---
 async def actualizar_progresos():
     while True:
-        await asyncio.sleep(5)
-        now = datetime.now()
-        for uid, acto in usuarios_acto.items():
-            # Calcular tiempo transcurrido
-            elapsed = (now - acto["last_update"]).total_seconds()
-            if elapsed < 5:
-                continue
-
-            # estado del usuario
-            estado = estado_hermana[uid]
-
-            # Actualizar valores
-            acto["exitacion_jugador"] = min(100, acto["exitacion_jugador"] + acto["mult_jugador"])
+        try:
+            await asyncio.sleep(5)
+            now = datetime.now()
             
-            if acto["despierta"]:
-                acto["exitacion_chica"] = min(100, acto["exitacion_chica"] + acto["mult_chica"] * (1 + estado["animo"]/100 + estado["felicidad"]/100))
-            
-            acto["molestia_chica"] = min(100, acto["molestia_chica"] + acto["mult_molestia"] * (1 - estado["animo"]/200 - estado["felicidad"]/200))
+            # Usar copia para evitar problemas durante iteración
+            for uid, acto in usuarios_acto.copy().items():
+                # Calcular tiempo transcurrido
+                elapsed = (now - acto["last_update"]).total_seconds()
+                if elapsed < 5:
+                    continue
 
-            # Probabilidad de despertar (inversa a energía)
-            if not acto["despierta"] and random.random() < (100 - estado["energia"]) / 200:
-                acto["despierta"] = True
+                # estado del usuario
+                estado = estado_hermana.get(uid, estado_inicial())
 
-            acto["last_update"] = now
+                # Actualizar valores
+                acto["exitacion_jugador"] = min(100, acto["exitacion_jugador"] + acto["mult_jugador"])
+                
+                if acto["despierta"]:
+                    acto["exitacion_chica"] = min(100, acto["exitacion_chica"] + acto["mult_chica"] * (1 + estado["animo"]/100 + estado["felicidad"]/100))
+                
+                acto["molestia_chica"] = min(100, acto["molestia_chica"] + acto["mult_molestia"] * (1 - estado["animo"]/200 - estado["felicidad"]/200))
+
+                # Probabilidad de despertar (inversa a energía)
+                if not acto["despierta"] and random.random() < (100 - estado["energia"]) / 200:
+                    acto["despierta"] = True
+
+                acto["last_update"] = now
+                
+        except Exception as e:
+            print(f"Error en actualización: {e}")
+            await asyncio.sleep(10)  # Espera antes de reintentar
+
+# --- Iniciar tarea de actualización ---
+def iniciar_tarea_actualizacion():
+    global tarea_actualizacion
+    if tarea_actualizacion is None or tarea_actualizacion.done():
+        tarea_actualizacion = asyncio.create_task(actualizar_progresos())
 
 # --- Generar Menú ---
 def generar_menu(uid):
@@ -95,9 +109,12 @@ def generar_menu(uid):
 
 # --- Manejador de Callbacks ---
 async def manejar_acto(app, query):
+    # Iniciar tarea de actualización si no está corriendo
+    iniciar_tarea_actualizacion()
+    
     uid = query.from_user.id
     if uid not in estado_hermana: 
-        query.answer("Primero usa /start para comenzar.")
+        await query.answer("Primero usa /start para comenzar.")
         return
 
     estado = estado_hermana[uid]
@@ -105,9 +122,8 @@ async def manejar_acto(app, query):
         usuarios_acto[uid] = iniciar_acto()
         
     acto = usuarios_acto[uid]
-    callback_query = query #Duplicar la variable porque me sa flojera editar todo
+    callback_query = query
     data = query.data
-    #await actualizar_progresos() 
     
     if data == "acto_start":
         generar_menu(uid)
@@ -117,7 +133,6 @@ async def manejar_acto(app, query):
         acto["mult_jugador"] += 0.2
         await query.answer("Te masturbaste mirando a tu hermana", show_alert=True)
         
-
     elif data == "tocar_pechos":
         if acto["ropa"]["blusa"]:
             acto["mult_molestia"] += 0.3
@@ -147,7 +162,6 @@ async def manejar_acto(app, query):
         acto["mult_chica"] += 0.6
         await query.answer("Tienes sexo con tu hermana", show_alert=True)
         
-
     elif data == "desvestir_menu":
         # Submenú de desvestir
         submenu = []
@@ -196,10 +210,19 @@ async def manejar_acto(app, query):
                 reply_markup=generar_menu(uid)
             )
         except MessageNotModified:
-            # Añadir un punto o espacio para forzar la modificación del mensaje
             texto_modificado = texto + "." if not texto.endswith(".") else texto + " "
             await callback_query.edit_message_text(
                 texto_modificado,
                 reply_markup=generar_menu(uid)
             )
 
+# Función para limpiar al detener el bot
+async def detener_actualizacion():
+    global tarea_actualizacion
+    if tarea_actualizacion:
+        tarea_actualizacion.cancel()
+        try:
+            await tarea_actualizacion
+        except asyncio.CancelledError:
+            pass
+        tarea_actualizacion = None
