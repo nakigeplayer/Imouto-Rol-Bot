@@ -1,7 +1,7 @@
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import MessageNotModified
-
+import random
 from datetime import datetime, timedelta
 import random
 import asyncio
@@ -223,6 +223,7 @@ async def manejar_acto(app, query):
         acto["exitacion_chica"] = acto["exitacion_chica"] - random.randint(80, 100)
         estado["felicidad"] = estado["felicidad"] + random.randint(10, 50)
         estado["animo"] = estado["felicidad"] + random.randint(10, 50)
+        acto["molestia_chica"] = max(0, acto["molestia_chica"] - random.randint(int(acto["molestia_chica"] * 0.6), acto["molestia_chica"]))
 
     elif acto["molestia_chica"] >= 100:
         mensaje = "Tu hermana se enojo contigo"
