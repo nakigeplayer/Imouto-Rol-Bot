@@ -85,6 +85,7 @@ def responder(_, query):
             estado["energia"] += 100
             estado["hambre"] += 10
             respuesta = "Tu hermanita durmió profundamente y recuperó energía."
+            avanzar_tiempo_noche(uid)
 
     elif accion == "jugar":
         if estado["energia"] < 15 or estado["hora"].hour >= 22:
@@ -93,7 +94,8 @@ def responder(_, query):
             estado["animo"] += 15
             estado["energia"] -= 10
             respuesta = "Jugaron juntos  y se divirtieron bastante."
-            avanzar_tiempo_noche(uid)
+            avanzar_tiempo(uid)
+
 
     elif accion == "comer_menu":
         botones = [
