@@ -3,13 +3,15 @@ from modelo import estado_hermana, consumir_item
 from tienda import productos, comprar_producto
 from tiempo import avanzar_tiempo, formato_tiempo, avanzar_tiempo_noche
 from persistencia import guardar_datos
-from textos import (
-    JUGO_EXITOSO, NO_QUIERE_JUGAR, CONVERSACION, COMIO, NO_HAY_HAMBRE, aleatorio
-)
 from datetime import datetime
 import random
+from textos import (
+    JUGO_EXITOSO, NO_QUIERE_JUGAR, CONVERSACION,
+    COMIO, NO_HAY_HAMBRE, aleatorio
+)
 
 aburrimiento = {}
+teclado_volver = InlineKeyboardMarkup([[InlineKeyboardButton("Volver", callback_data="volver")]])
 
 def actualizar_aburrimiento(uid, accion):
     if uid not in aburrimiento:
@@ -62,6 +64,8 @@ def manejar_callback(app, query):
         else:
             estado["energia"] += 100
             estado["hambre"] += 10
+            estado["animo"] -= random.randint(50, 100)
+            estado["felicidad"] -= random.randint(50, 100)
             aburrimiento.pop(uid, None)
             avanzar_tiempo_noche(uid)
             respuesta = "Tu hermanita durmió profundamente y recuperó energía."
@@ -74,7 +78,11 @@ def manejar_callback(app, query):
         elif estado["energia"] < 15 or estado["hora"].hour >= 22:
             respuesta = "La hermana está muy cansada. Solo quiere dormir."
         else:
-            estado["animo"] += 15
+            if random.random() < 0.05:
+                delta_animo = -random.randint(2, 5)
+            else:
+                delta_animo = random.randint(10, 20)
+            estado["animo"] += delta_animo
             estado["energia"] -= 10
             avanzar_tiempo(uid)
             actualizar_aburrimiento(uid, "jugar")
@@ -88,8 +96,14 @@ def manejar_callback(app, query):
         elif estado["energia"] < 10 or estado["hora"].hour >= 22:
             respuesta = "Tu hermana está muy cansada para hablar."
         else:
-            estado["animo"] += 10
-            estado["felicidad"] += 5
+            if random.random() < 0.05:
+                delta_animo = -random.randint(2, 4)
+                delta_felicidad = -random.randint(1, 3)
+            else:
+                delta_animo = random.randint(5, 10)
+                delta_felicidad = random.randint(4, 8)
+            estado["animo"] += delta_animo
+            estado["felicidad"] += delta_felicidad
             estado["energia"] -= 8
             avanzar_tiempo(uid)
             actualizar_aburrimiento(uid, "conversar")
@@ -118,10 +132,10 @@ def manejar_callback(app, query):
             texto_efecto = ""
             if efecto:
                 for atributo, delta in efecto["efecto"].items():
-                    estado[atributo] = max(0, min(100, estado[atributo] + delta))
+                    estado[atributo] = estado[atributo] + delta
                     texto_efecto += f" {atributo.capitalize()} {delta:+d}"
             avanzar_tiempo(uid)
-            respuesta = aleatorio(COMIO) + texto_efecto
+            respuesta = aleatorio(COMIO).format(item=item) + (texto_efecto or "")
 
     elif accion == "comprar_menu":
         if hambre >= 60:
@@ -145,5 +159,4 @@ def manejar_callback(app, query):
 
     guardar_datos()
     query.answer()
-    query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=generar_menu_principal())
-            
+    query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=teclado_volver)
