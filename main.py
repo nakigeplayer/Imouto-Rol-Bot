@@ -65,9 +65,28 @@ def cargar_json(_, message: Message):
     finally:
         os.remove(ruta)
 
+# Acciones estáticas del menú principal
+ACCIONES_MENU = {
+    "jugar", "conversar", "comer_menu", "comprar_menu", "dormir", "estado", "volver"
+}
+
+# Verifica si la acción pertenece al menú principal o es una acción dinámica
+def es_callback_menu(data):
+    return (
+        data in ACCIONES_MENU
+        or data.startswith("comer_")
+        or data.startswith("buy_")
+    )
+
 @app.on_callback_query()
 def responder(app, query):
-    manejar_callback(app, query)
+    accion = query.data
+    if es_callback_menu(accion):
+        manejar_callback(app, query)
+    else:
+        # Aquí puedes enrutar otros callbacks personalizados, si los defines aparte
+        query.answer("Esta acción será manejada en otro módulo.", show_alert=True)
+
     
 async def main():
     cargar_datos()
