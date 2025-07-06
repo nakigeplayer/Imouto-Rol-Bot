@@ -16,11 +16,21 @@ def limpiar_comentarios(origen: str, destino: str):
     with open(origen, "r", encoding="utf-8") as f:
         lineas_limpias = []
         for linea in f:
+            # Elimina comentario en línea después de una llave
             if re.search(r"\{\s*#.*", linea):
                 linea = re.sub(r"\{\s*#.*", "{", linea)
+
+            # Asegura comillas dobles en claves numéricas
+            match = re.match(r"\s*(\d+)\s*:\s*{", linea)
+            if match:
+                uid = match.group(1)
+                linea = linea.replace(uid, f'"{uid}"', 1)
+
             lineas_limpias.append(linea)
+
     with open(destino, "w", encoding="utf-8") as f:
         f.writelines(lineas_limpias)
+        
 
 def registrar_handlers_load(app):
 
