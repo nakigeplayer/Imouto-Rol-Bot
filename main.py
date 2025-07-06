@@ -49,7 +49,7 @@ registrar_handlers_load(app)
 
 # Acciones estáticas del menú principal
 ACCIONES_MENU = {
-    "jugar", "conversar", "comer_menu", "comprar_menu", "dormir", "estado", "volver", "ir_escuela"
+    "jugar", "conversar", "comer_menu", "comprar_menu", "estado", "volver", "ir_escuela"
 }
 
 # Verifica si la acción pertenece al menú principal o es una acción dinámica
@@ -58,6 +58,7 @@ def es_callback_menu(data):
         data in ACCIONES_MENU
         or data.startswith("comer_")
         or data.startswith("buy_")
+        or data.startswith("dormir")
     )
 
 @app.on_callback_query()
