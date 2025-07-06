@@ -62,8 +62,8 @@ def es_callback_menu(data):
         or data.startswith("dormir")
     )
 
-async @app.on_callback_query()
-def responder(app, query):
+@app.on_callback_query()
+async def responder(app, query):
     accion = query.data
     if es_callback_menu(accion):
         await manejar_callback(app, query)
