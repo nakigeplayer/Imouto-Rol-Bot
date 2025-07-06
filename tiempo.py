@@ -3,7 +3,12 @@ from datetime import timedelta
 from modelo import estado_hermana
 
 DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
-
+def avanzar_tiempo_noche(user_id):
+    """Avanza al día siguiente y establece la hora a las 06:30."""
+    estado = estado_hermana[user_id]
+    estado["dia_num"] = (estado["dia_num"] + 1) % 7
+    estado["hora"] = estado["hora"].replace(hour=6, minute=30)
+    
 def avanzar_tiempo(user_id):
     """Avanza 30 minutos en el tiempo del jugador."""
     estado = estado_hermana[user_id]
