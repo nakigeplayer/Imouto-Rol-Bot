@@ -216,18 +216,25 @@ async def manejar_acto(app, query):
     # Verificar condiciones de fin
     mensaje = None
     if acto["exitacion_jugador"] >= 100:
-        mensaje = "Has llegado al clímax. Fin del juego."
-        marcar_acto_terminado_2(uid)
+        mensaje = "Tu semen se desborda sobre el cuerpo de tu hermana"
+        acto["exitacion_jugador"] = 0
     elif acto["exitacion_chica"] >= 100:
-        mensaje = "La chica tuvo un orgasmo. ¡Éxito!"
-        marcar_acto_terminado_2(uid)
+        mensaje = "Tu hermana tuvo un orgasmo"
+        acto["exitacion_chica"] = acto["exitacion_chica"] - random.randint(80, 100)
+        estado["felicidad"] = estado["felicidad"] + random.randint(10, 50)
+        estado["animo"] = estado["felicidad"] + random.randint(10, 50)
+
     elif acto["molestia_chica"] >= 100:
-        mensaje = "La chica está demasiado molesta. Fin del juego."
+        mensaje = "Tu hermana se enojo contigo"
+        estado["felicidad"] = estado["felicidad"] - 
+        estado["animo"] = estado["animo"] - random.randint(80, 100)
+        await callback_query.edit_message_text(mensaje)
+        usuarios_acto.pop(uid, None)
         marcar_acto_terminado_2(uid)
 
     if mensaje:
-        await callback_query.edit_message_text(mensaje)
-        usuarios_acto.pop(uid, None)
+        await callback_query.edit_message_text(mensaje, reply_markup=generar_menu(uid))
+        #usuarios_acto.pop(uid, None)
     else:
         # Actualizar mensaje
         texto = (
