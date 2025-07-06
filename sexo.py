@@ -23,6 +23,7 @@ def estado_inicial():
 def iniciar_acto():
     return {
         "exitacion_jugador": 0,
+        "eyaculaciones": 0,
         "exitacion_chica": 0,
         "molestia_chica": 0,
         "mult_jugador": 1.0,
@@ -76,7 +77,7 @@ async def actualizar_progresos():
                 acto["mult_molestia2"] = ((5 - abs((temp_felicidad)) + (5 - abs(temp_animo))) / 2 ) - ((div_felicidad + div_animo) / 2)
                 
                                                                               
-                acto["exitacion_jugador"] = min(100, acto["exitacion_jugador"] + acto["mult_jugador"])
+                acto["exitacion_jugador"] = min(100, acto["exitacion_jugador"] + ((acto["mult_jugador"]) / (1 + acto["eyaculaciones"])))
 
                 if acto["despierta"]:
                     acto["exitacion_chica"] = min(
@@ -86,7 +87,7 @@ async def actualizar_progresos():
 
                 acto["molestia_chica"] = min(
                     100,
-                    acto["molestia_chica"] + ((acto["mult_molestia"] + acto["mult_molestia2"]) / 2)
+                    acto["molestia_chica"] + ((acto["mult_molestia"] + acto["mult_molestia2"]) / 2 * ))
                 )
 
                 if not acto["despierta"] and random.random() < (100 - estado["energia"]) / 200:
@@ -218,11 +219,14 @@ async def manejar_acto(app, query):
     if acto["exitacion_jugador"] >= 100:
         mensaje = "Tu semen se desborda sobre el cuerpo de tu hermana"
         acto["exitacion_jugador"] = 0
+        acto["mult_jugador"] = 0
+        acto["eyaculaciones"] = acto["eyaculaciones"] + 1
     elif acto["exitacion_chica"] >= 100:
         mensaje = "Tu hermana tuvo un orgasmo"
         acto["exitacion_chica"] = acto["exitacion_chica"] - random.randint(80, 100)
         estado["felicidad"] = estado["felicidad"] + random.randint(10, 50)
         estado["animo"] = estado["felicidad"] + random.randint(10, 50)
+        acto["mult_chica"] = 0
         acto["molestia_chica"] = max(0, acto["molestia_chica"] - random.randint(int(acto["molestia_chica"] * 0.6), acto["molestia_chica"]))
 
     elif acto["molestia_chica"] >= 100:
