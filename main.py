@@ -73,6 +73,7 @@ def es_callback_menu(data):
 
 @app.on_callback_query()
 async def responder(app, query):
+    user = query.from_user
     uid = user.id
     accion = query.data
     if es_callback_menu(accion):
