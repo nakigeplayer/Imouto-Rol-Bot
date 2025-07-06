@@ -38,7 +38,7 @@ def iniciar_acto():
             "pantis": True
         },
         "piernas_abiertas": False,
-        "penetracion", False,
+        "penetracion": False,
         "last_update": datetime.now()
     }
 
