@@ -51,7 +51,7 @@ productos = {
     },
     "te relajante": {
         "precio": 200,
-        "efecto: {"energia": -20}
+        "efecto": {"energia": -20}
         
     }
 }
