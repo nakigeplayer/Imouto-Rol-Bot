@@ -31,10 +31,10 @@ def generar_menu_principal():
     ]
     return InlineKeyboardMarkup(botones)
 
-def manejar_callback(app, query):
+async def manejar_callback(app, query):
     uid = query.from_user.id
     if uid not in estado_hermana:
-        query.answer("Primero usa /start para comenzar.")
+        await query.answer("Primero usa /start para comenzar.")
         return
 
     estado = estado_hermana[uid]
@@ -42,13 +42,12 @@ def manejar_callback(app, query):
     hambre = estado["hambre"]
     respuesta = ""
 
-    # 🏫 Restricción de opciones a las 07:30 de lunes a viernes
     if estado["dia_num"] <= 4 and estado["hora"].hour == 7 and estado["hora"].minute == 30:
         if accion == "ir_escuela":
             estado["energia"] -= 25
             estado["animo"] -= 10
             estado["felicidad"] += 15
-            avanzar_tiempo(uid)
+            await avanzar_tiempo(uid)
             respuesta = "Tu hermanita fue a clases y aprendió mucho 📚"
         elif accion == "estado":
             respuesta = (
@@ -57,11 +56,11 @@ def manejar_callback(app, query):
                 f"Ánimo: {estado['animo']}\n"
                 f"Felicidad: {estado['felicidad']}\n"
                 f"Energía: {estado['energia']}\n"
-                f"Dinero: ${estado['dinero']}\n" + formato_tiempo(uid)
+                f"Dinero: ${estado['dinero']}\n" + await formato_tiempo(uid)
             )
         else:
-            query.answer()
-            query.message.edit_text(
+            await query.answer()
+            await query.message.edit_text(
                 "A esta hora solo puedes ir a la escuela 🏫 o revisar el estado 📋.",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("🏫 Ir a la escuela", callback_data="ir_escuela")],
@@ -70,14 +69,13 @@ def manejar_callback(app, query):
             )
             return
 
-        guardar_datos()
-        query.answer()
-        query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=teclado_volver)
+        await guardar_datos()
+        await query.answer()
+        await query.message.edit_text(respuesta + "\n" + await formato_tiempo(uid), reply_markup=teclado_volver)
         return
 
-    # --- resto de acciones normales abajo ---
     if accion == "volver":
-        query.message.edit_text("Elige una acción:", reply_markup=generar_menu_principal())
+        await query.message.edit_text("Elige una acción:", reply_markup=generar_menu_principal())
         return
 
     elif accion == "estado":
@@ -87,33 +85,32 @@ def manejar_callback(app, query):
             f"Ánimo: {estado['animo']}\n"
             f"Felicidad: {estado['felicidad']}\n"
             f"Energía: {estado['energia']}\n"
-            f"Dinero: ${estado['dinero']}\n" + formato_tiempo(uid)
+            f"Dinero: ${estado['dinero']}\n" + await formato_tiempo(uid)
         )
 
-    elif accion.startswith("dormir"):
-        if accion == "dormir":
-            if hambre >= 80:
-                respuesta = "Tu hermana no puede dormir por el hambre"
-            elif estado["energia"] >= 100:
-                respuesta = "La hermanita no tiene sueño aún"
-            else:
-                query.message.edit_text(
-                    "Tu hermanita se acuesta en la cama.",
-                    reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("Dormir también", callback_data="dormir_confirm")],
-                        [InlineKeyboardButton("Invadir su cama", callback_data="acto_start")]
-                    ])
-                )
-                return  # Para evitar continuar con la lógica posterior
+    elif accion == "dormir":
+        if hambre >= 80:
+            respuesta = "Tu hermana no puede dormir por el hambre"
+        elif estado["energia"] >= 100:
+            respuesta = "La hermanita no tiene sueño aún"
+        else:
+            await query.message.edit_text(
+                "Tu hermanita se acuesta en la cama.",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("Dormir también", callback_data="dormir_confirm")],
+                    [InlineKeyboardButton("Invadir su cama", callback_data="acto_start")]
+                ])
+            )
+            return
 
-        elif accion == "dormir_confirm":
-            estado["energia"] += 100
-            estado["hambre"] += 10
-            estado["animo"] -= random.randint(50, 100)
-            estado["felicidad"] -= random.randint(50, 100)
-            aburrimiento.pop(uid, None)
-            avanzar_tiempo_noche(uid)
-            respuesta = "Tu hermanita durmió profundamente y recuperó energía."
+    elif accion == "dormir_confirm":
+        estado["energia"] += 100
+        estado["hambre"] += 10
+        estado["animo"] -= random.randint(50, 100)
+        estado["felicidad"] -= random.randint(50, 100)
+        aburrimiento.pop(uid, None)
+        await avanzar_tiempo_noche(uid)
+        respuesta = "Tu hermanita durmió profundamente y recuperó energía."
 
     elif accion == "jugar":
         if hambre >= 60:
@@ -126,7 +123,7 @@ def manejar_callback(app, query):
             delta_animo = -random.randint(2, 5) if random.random() < 0.05 else random.randint(10, 20)
             estado["animo"] += delta_animo
             estado["energia"] -= 10
-            avanzar_tiempo(uid)
+            await avanzar_tiempo(uid)
             actualizar_aburrimiento(uid, "jugar")
             respuesta = aleatorio(JUGO_EXITOSO)
 
@@ -147,7 +144,7 @@ def manejar_callback(app, query):
             estado["animo"] += delta_animo
             estado["felicidad"] += delta_felicidad
             estado["energia"] -= 8
-            avanzar_tiempo(uid)
+            await avanzar_tiempo(uid)
             actualizar_aburrimiento(uid, "conversar")
             respuesta = aleatorio(CONVERSACION)
 
@@ -161,7 +158,7 @@ def manejar_callback(app, query):
         if not botones:
             botones = [[InlineKeyboardButton("Inventario vacío", callback_data="volver")]]
         botones.append([InlineKeyboardButton("Volver", callback_data="volver")])
-        query.message.edit_text("¿Qué deseas darle de comer?", reply_markup=InlineKeyboardMarkup(botones))
+        await query.message.edit_text("¿Qué deseas darle de comer?", reply_markup=InlineKeyboardMarkup(botones))
         return
 
     elif accion.startswith("comer_"):
@@ -176,7 +173,7 @@ def manejar_callback(app, query):
                 for atributo, delta in efecto["efecto"].items():
                     estado[atributo] += delta
                     texto_efecto += f" {atributo.capitalize()} {delta:+d}"
-            avanzar_tiempo(uid)
+            await avanzar_tiempo(uid)
             respuesta = aleatorio(COMIO).format(item=item) + (texto_efecto or "")
 
     elif accion == "comprar_menu":
@@ -188,17 +185,18 @@ def manejar_callback(app, query):
                 for item, info in productos.items()
             ]
             botones.append([InlineKeyboardButton("Volver", callback_data="volver")])
-            query.message.edit_text("¿Qué quieres comprar?", reply_markup=InlineKeyboardMarkup(botones))
+            await query.message.edit_text("¿Qué quieres comprar?", reply_markup=InlineKeyboardMarkup(botones))
             return
 
     elif accion.startswith("buy_"):
         nombre = accion.replace("buy_", "")
         respuesta = comprar_producto(uid, nombre, estado)
-        avanzar_tiempo(uid)
+        await avanzar_tiempo(uid)
 
     else:
         respuesta = "Comando no reconocido."
 
-    guardar_datos()
-    query.answer()
-    query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=teclado_volver)
+    await guardar_datos()
+    await query.answer()
+    await query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=teclado_volver)
+    await query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=teclado_volver)
