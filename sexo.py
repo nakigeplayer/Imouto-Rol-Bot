@@ -103,6 +103,7 @@ async def manejar_acto(app, query):
         usuarios_acto[uid] = iniciar_acto()
         
     acto = usuarios_acto[uid]
+    callback_query = query #Duplicar la variable porque me sa flojera editar todo
     data = query.data
     
     if data == "acto_start":
