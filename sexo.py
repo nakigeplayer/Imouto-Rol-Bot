@@ -35,9 +35,10 @@ def iniciar_acto():
         "ropa": {
             "blusa": True,
             "falda": True,
-            "pantis": True,
-            "piernas_abiertas": False
+            "pantis": True
         },
+        "piernas_abiertas": False,
+        "penetracion", False,
         "last_update": datetime.now()
     }
 
@@ -87,7 +88,7 @@ async def actualizar_progresos():
 
                 acto["molestia_chica"] = min(
                     100,
-                    acto["molestia_chica"] + ((acto["mult_molestia"] + acto["mult_molestia2"]) / 2 * ))
+                    acto["molestia_chica"] + ((acto["mult_molestia"] + acto["mult_molestia2"]) / 2 * )
                 )
 
                 if not acto["despierta"] and random.random() < (100 - estado["energia"]) / 200:
@@ -112,7 +113,8 @@ def generar_menu(uid):
     botones = []
 
     # Opciones siempre disponibles
-    botones.append([InlineKeyboardButton("Masturbarse", callback_data="masturbar_jugador")])
+    if not acto["penetracion"]:
+        botones.append([InlineKeyboardButton("Masturbarse", callback_data="masturbar_jugador")])
 
     # Opciones de desvestir
     if acto["ropa"]["blusa"] or acto["ropa"]["falda"] or acto["ropa"]["pantis"]:
@@ -127,16 +129,25 @@ def generar_menu(uid):
         botones.append([InlineKeyboardButton("Masturbarla", callback_data="masturbar_chica")])
 
     # Abrir piernas (solo si están cerradas)
-    if not acto["ropa"]["piernas_abiertas"]:
+    if not (acto["ropa"]["falda"] or acto["piernas_abiertas"]):
         botones.append([InlineKeyboardButton("Abrir piernas", callback_data="abrir_piernas")])
-    elif not acto["ropa"]["pantis"]:  # Opciones avanzadas
-        botones.append([InlineKeyboardButton("Rozar vagina", callback_data="rozar_vagina")])
+    elif not acto["ropa"]["pantis"]:
+        if not acto["penetracion"]:
+            botones.append([InlineKeyboardButton("Rozar vagina", callback_data="rozar_vagina")])
         botones.append([InlineKeyboardButton("Penetrar", callback_data="penetrar")])
+        if acto["penetracion"]:
+            botones.append([InlineKeyboardButton("Moverse", callback_data="moverse")])
 
     botones.append([InlineKeyboardButton("Ir a dormir", callback_data="dormir_confirm")])
 
     return InlineKeyboardMarkup(botones)
 
+def generar_menu_2(uid):
+    acto = usuarios_acto.get(uid, iniciar_acto())
+    botones = []
+    botones.append([InlineKeyboardButton("Continuar", callback_data="acto_continue")])
+    return InlineKeyboardMarkup(botones)
+    
 # --- Manejador de Callbacks ---
 async def manejar_acto(app, query):
     # Iniciar tarea de actualización si no está corriendo
@@ -155,7 +166,7 @@ async def manejar_acto(app, query):
     callback_query = query
     data = query.data
     
-    if data == "acto_start":
+    if data == "acto_start" or data == "acto_continue":
         generar_menu(uid)
 
     # Procesar acciones
@@ -190,6 +201,12 @@ async def manejar_acto(app, query):
     elif data == "penetrar":
         acto["mult_jugador"] += 0.8
         acto["mult_chica"] += 0.6
+        acto["penetracion"] = True
+        await query.answer("Tienes sexo con tu hermana", show_alert=True)
+        
+    elif data == "moverse":
+        acto["mult_jugador"] += 1.0
+        acto["mult_chica"] += 0.8
         await query.answer("Tienes sexo con tu hermana", show_alert=True)
         
     elif data == "desvestir_menu":
@@ -238,7 +255,7 @@ async def manejar_acto(app, query):
         marcar_acto_terminado_2(uid)
 
     if mensaje:
-        await callback_query.edit_message_text(mensaje, reply_markup=generar_menu(uid))
+        await callback_query.edit_message_text(mensaje, reply_markup=generar_menu_2(uid))
         #usuarios_acto.pop(uid, None)
     else:
         # Actualizar mensaje
