@@ -92,7 +92,7 @@ def generar_menu(uid):
     return InlineKeyboardMarkup(botones)
 
 # --- Manejador de Callbacks ---
-def manejar_acto(app, query):
+async def manejar_acto(app, query):
     uid = query.from_user.id
     if uid not in estado_hermana:
         query.answer("Primero usa /start para comenzar.")
@@ -100,6 +100,9 @@ def manejar_acto(app, query):
 
     estado = estado_hermana[uid]
     acto = usuarios_acto[uid]
+    
+    if data == "acto_start":
+        generar_menu(uid)
 
     # Procesar acciones
     if data == "masturbar_jugador":
