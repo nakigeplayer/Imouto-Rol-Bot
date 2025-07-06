@@ -114,30 +114,38 @@ async def manejar_acto(app, query):
     # Procesar acciones
     if data == "masturbar_jugador":
         acto["mult_jugador"] += 0.2
+        query.answer("Te masturbaste mirando a tu hermana", show_alert=True)
+        
 
     elif data == "tocar_pechos":
         if acto["ropa"]["blusa"]:
             acto["mult_molestia"] += 0.3
         else:
             acto["mult_chica"] += 0.2
+        query.answer("Tocaste los pechos tu hermana", show_alert=True)
 
     elif data == "masturbar_chica":
         if acto["ropa"]["pantis"]:
             acto["mult_molestia"] += 0.4
         else:
             acto["mult_chica"] += 0.5 if acto["ropa"]["piernas_abiertas"] else 0.3
+        query.answer("Masturbaste a tu hermana", show_alert=True)
 
     elif data == "abrir_piernas":
         acto["ropa"]["piernas_abiertas"] = True
         acto["mult_molestia"] += 0.2
+        query.answer("Abriste las piernas de tu hermana", show_alert=True)
 
     elif data == "rozar_vagina":
         acto["mult_jugador"] += 0.4
         acto["mult_chica"] += 0.3
+        query.answer("Frotas tu pene con la vagina tu hermana", show_alert=True)
 
     elif data == "penetrar":
         acto["mult_jugador"] += 0.8
         acto["mult_chica"] += 0.6
+        query.answer("Tienes sexo con tu hermana", show_alert=True)
+        
 
     elif data == "desvestir_menu":
         # Submenú de desvestir
@@ -158,6 +166,7 @@ async def manejar_acto(app, query):
     elif data.startswith("quitar_"):
         item = data.split("_")[1]
         acto["ropa"][item] = False
+        query.answer(f"Le quitaste la {item} a tu hermana", show_alert=True)
         acto["mult_molestia"] += 0.1
 
     # Verificar condiciones de fin
