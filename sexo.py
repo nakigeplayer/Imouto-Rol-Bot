@@ -70,22 +70,22 @@ async def actualizar_progresos():
                     temp_felicidad /= 5
                     div_felicidad += 1
 
-                acto["mult_chica2"] = ((animo + felicidad) / 2) + ((div_animo + div_felicidad) / 2)
+                acto["mult_chica2"] = (temp_animo + temp_felicidad) / 2) + ((div_animo + div_felicidad) / 2)
 
                 # mult_molestia2
-                acto["mult_molestia2"] = ((div_felicidad + div_animo) / 2) + ((5 - abs(animo)) + (5 - abs(felicidad))) * 2
+                acto["mult_molestia2"] = ((div_felicidad + div_animo) / 2) + ((5 - abs((temp_felicidad)) + (5 - abs(temp_animo)) * 2
 
                 acto["exitacion_jugador"] = min(100, acto["exitacion_jugador"] + acto["mult_jugador"])
 
                 if acto["despierta"]:
                     acto["exitacion_chica"] = min(
                         100,
-                        acto["exitacion_chica"] + acto["mult_chica2"]
+                        acto["exitacion_chica"] + ((acto["mult_chica"] + acto["mult_chica2"]) / 2)
                     )
 
                 acto["molestia_chica"] = min(
                     100,
-                    acto["molestia_chica"] + acto["mult_molestia2"]
+                    acto["molestia_chica"] + ((acto["mult_molestia"] + acto["mult_molestia2"]) / 2)
                 )
 
                 if not acto["despierta"] and random.random() < (100 - estado["energia"]) / 200:
