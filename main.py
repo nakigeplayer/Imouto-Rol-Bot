@@ -6,15 +6,13 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 from modelo import inicializar_usuario, estado_hermana, consumir_item, agregar_item
 from tienda import productos, comprar_producto
-from tiempo import avanzar_tiempo, formato_tiempo
+from tiempo import avanzar_tiempo, formato_tiempo, avanzar_tiempo_noche
 from persistencia import guardar_datos, cargar_datos, setup_autoguardado
 from datetime import datetime
 import os
 import json
 from dotenv import load_dotenv
-import asyncio
-import nest_asyncio
-nest_asyncio.apply()
+
 load_dotenv()
 
 API_ID = int(os.getenv("API_ID"))
@@ -86,18 +84,21 @@ def responder(_, query):
             respuesta = "Tu hermanita durmió profundamente y recuperó energía."
 
     elif accion == "jugar":
-        if estado["energia"] < 15 and estado["hora"].hour >= 22:
+        if estado["energia"] < 15 or estado["hora"].hour >= 22:
             respuesta = "La hermana está muy cansada. Solo quiere dormir."
         else:
             estado["animo"] += 15
             estado["energia"] -= 10
-            respuesta = "Jugaron juntas  y se divirtieron bastante."
+            respuesta = "Jugaron juntos  y se divirtieron bastante."
+            avanzar_tiempo_noche(uid)
 
     elif accion == "comer_menu":
         botones = [
             [InlineKeyboardButton(f"{item} x{cantidad}", callback_data=f"comer_{item}")]
             for item, cantidad in estado["inventario"].items() if cantidad > 0
         ]
+        if estado["hambre"] == 0 or estado["hora"].hour >= 22:
+            respuesta = "Tu hermana no tiene hambre"
         if not botones:
             botones = [[InlineKeyboardButton("Inventario vacío", callback_data="volver")]]
         botones.append([InlineKeyboardButton(" Volver", callback_data="volver")])
@@ -119,6 +120,7 @@ def responder(_, query):
                     estado[atributo] = max(0, min(100, estado[atributo] + delta))
                     texto_efecto += f" {atributo.capitalize()} {delta:+d}"
                 respuesta = f"Tu hermanita comió {item} 🍴.{texto_efecto}"
+                avanzar_tiempo(uid)
 
     elif accion == "comprar_menu":
         botones = [
@@ -132,11 +134,12 @@ def responder(_, query):
     elif accion.startswith("buy_"):
         nombre = accion.replace("buy_", "")
         respuesta = comprar_producto(uid, nombre, estado)
+        avanzar_tiempo(uid)
 
     else:
         respuesta = "Comando no reconocido."
 
-    avanzar_tiempo(uid)
+
     guardar_datos()
     query.answer()
     query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=generar_menu_principal())
@@ -150,15 +153,10 @@ def generar_menu_principal():
         [InlineKeyboardButton("Ver Estado", callback_data="estado")]
     ])
 
-async def main():
-    cargar_datos()
-    await app.start()
-    setup_autoguardado(guardar_datos)
-    print("Bot iniciado y operativo.")
-    await asyncio.Event().wait()
-
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("Detención forzada realizada")
+    cargar_datos()
+    app.start()
+    setup_autoguardado(guardar_datos)
+    print("Bot en marcha. Presiona Ctrl+C para detener.")
+    app.idle()
+    
