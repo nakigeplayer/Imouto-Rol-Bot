@@ -18,6 +18,7 @@ nest_asyncio.apply()
 from menu_query import manejar_callback, generar_menu_principal, actualizar_aburrimiento
 from comandos_save import registrar_handlers_save
 from comandos_load import registrar_handlers_load
+from sexo import manejar_acto, generar_menu, iniciar_acto, actualizar_progresos
 
 
 load_dotenv()
@@ -67,8 +68,8 @@ def responder(app, query):
     if es_callback_menu(accion):
         manejar_callback(app, query)
     else:
-        # Aquí puedes enrutar otros callbacks personalizados, si los defines aparte
-        query.answer("Esta acción será manejada en otro módulo.", show_alert=True)
+        manejar_acto(app, query)# Aquí puedes enrutar otros callbacks personalizados, si los defines aparte
+        #query.answer("Esta acción será manejada en otro módulo.", show_alert=True)
 
     
 async def main():
