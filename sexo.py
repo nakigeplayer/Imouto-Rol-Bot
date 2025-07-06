@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import random
 import asyncio
 from modelo import inicializar_usuario, estado_hermana, consumir_item
-from main import marcar_acto_terminado
+from estado_actos import marcar_acto_terminado
 
 # --- Estados del Juego ---
 usuarios = {}  # Guarda ánimo, felicidad, energía
@@ -39,6 +39,10 @@ def iniciar_acto():
         },
         "last_update": datetime.now()
     }
+
+def marcar_acto_terminado_2(uid):
+    marcar_acto_terminado(uid)
+    
 
 async def actualizar_progresos():
     while True:
@@ -212,13 +216,13 @@ async def manejar_acto(app, query):
     mensaje = None
     if acto["exitacion_jugador"] >= 100:
         mensaje = "Has llegado al clímax. Fin del juego."
-        marcar_acto_terminado(uid)
+        marcar_acto_terminado_2(uid)
     elif acto["exitacion_chica"] >= 100:
         mensaje = "La chica tuvo un orgasmo. ¡Éxito!"
-        marcar_acto_terminado(uid)
+        marcar_acto_terminado_2(uid)
     elif acto["molestia_chica"] >= 100:
         mensaje = "La chica está demasiado molesta. Fin del juego."
-        marcar_acto_terminado(uid)
+        marcar_acto_terminado_2(uid)
 
     if mensaje:
         await callback_query.edit_message_text(mensaje)
