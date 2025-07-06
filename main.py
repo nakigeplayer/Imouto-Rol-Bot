@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 # coding: utf-8
 
-
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
-from modelo import inicializar_usuario, estado_hermana, consumir_item, agregar_item
+from modelo import inicializar_usuario, estado_hermana, consumir_item
 from tienda import productos, comprar_producto
 from tiempo import avanzar_tiempo, formato_tiempo, avanzar_tiempo_noche
 from persistencia import guardar_datos, cargar_datos, setup_autoguardado
 from datetime import datetime
 import os
 import json
+import random
 from dotenv import load_dotenv
 import asyncio
 import nest_asyncio
@@ -24,10 +24,19 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 app = Client("hermanita_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+aburrimiento = {}
+
+def actualizar_aburrimiento(uid, accion):
+    if uid not in aburrimiento:
+        aburrimiento[uid] = {"jugar": 0, "conversar": 0}
+    aburrimiento[uid][accion] += 20
+    if random.randint(1, 100) <= aburrimiento[uid][accion]:
+        aburrimiento[uid][accion] = 100
+
 @app.on_message(filters.command("start"))
 def start(_, message):
     user = message.from_user
-    estado = inicializar_usuario(user.id)
+    inicializar_usuario(user.id)
     reply_markup = generar_menu_principal()
     message.reply_text(f"¡Hola, {user.first_name}! Comienza tu día cuidando a tu hermanita", reply_markup=reply_markup)
 
@@ -52,7 +61,7 @@ def cargar_json(_, message: Message):
             estado_hermana[int(uid)] = estado
         message.reply_text("Datos cargados correctamente.")
     except Exception as e:
-        message.reply_text(f" Error al cargar: {e}")
+        message.reply_text(f"Error al cargar: {e}")
     finally:
         os.remove(ruta)
 
@@ -61,6 +70,7 @@ def responder(_, query):
     uid = query.from_user.id
     estado = estado_hermana[uid]
     accion = query.data
+    hambre = estado["hambre"]
     respuesta = ""
 
     if accion == "volver":
@@ -79,23 +89,45 @@ def responder(_, query):
         )
 
     elif accion == "dormir":
-        if estado["energia"] >= 100:
+        if hambre >= 80:
+            respuesta = "Tu hermana no puede dormir por el hambre"
+        elif estado["energia"] >= 100:
             respuesta = "La hermanita no tiene sueño aún"
         else:
             estado["energia"] += 100
             estado["hambre"] += 10
+            aburrimiento.pop(uid, None)
             respuesta = "Tu hermanita durmió profundamente y recuperó energía."
             avanzar_tiempo_noche(uid)
 
     elif accion == "jugar":
-        if estado["energia"] < 15 or estado["hora"].hour >= 22:
+        if hambre >= 60:
+            respuesta = "Tu hermana tiene mucha hambre para eso"
+        elif aburrimiento.get(uid, {}).get("jugar", 0) >= 100:
+            respuesta = "Tu hermana no quiere jugar"
+        elif estado["energia"] < 15 or estado["hora"].hour >= 22:
             respuesta = "La hermana está muy cansada. Solo quiere dormir."
         else:
             estado["animo"] += 15
             estado["energia"] -= 10
-            respuesta = "Jugaron juntos  y se divirtieron bastante."
+            respuesta = "Jugaron juntos y se divirtieron bastante."
             avanzar_tiempo(uid)
+            actualizar_aburrimiento(uid, "jugar")
 
+    elif accion == "conversar":
+        if hambre >= 60:
+            respuesta = "Tu hermana tiene mucha hambre para eso"
+        elif aburrimiento.get(uid, {}).get("conversar", 0) >= 100:
+            respuesta = "Tu hermana no quiere conversar"
+        elif estado["energia"] < 10 or estado["hora"].hour >= 22:
+            respuesta = "Tu hermana está muy cansada para hablar."
+        else:
+            estado["animo"] += 10
+            estado["felicidad"] += 5
+            estado["energia"] -= 8
+            respuesta = "Conversaron un rato sobre cosas bonitas."
+            avanzar_tiempo(uid)
+            actualizar_aburrimiento(uid, "conversar")
 
     elif accion == "comer_menu":
         botones = [
@@ -106,8 +138,8 @@ def responder(_, query):
             respuesta = "Tu hermana no tiene hambre"
         if not botones:
             botones = [[InlineKeyboardButton("Inventario vacío", callback_data="volver")]]
-        botones.append([InlineKeyboardButton(" Volver", callback_data="volver")])
-        query.message.edit_text(" ¿Qué deseas darle de comer?", reply_markup=InlineKeyboardMarkup(botones))
+        botones.append([InlineKeyboardButton("Volver", callback_data="volver")])
+        query.message.edit_text("¿Qué deseas darle de comer?", reply_markup=InlineKeyboardMarkup(botones))
         return
 
     elif accion.startswith("comer_"):
@@ -128,13 +160,16 @@ def responder(_, query):
                 avanzar_tiempo(uid)
 
     elif accion == "comprar_menu":
-        botones = [
-            [InlineKeyboardButton(f"{item} - ${info['precio']}", callback_data=f"buy_{item}")]
-            for item, info in productos.items()
-        ]
-        botones.append([InlineKeyboardButton("Volver", callback_data="volver")])
-        query.message.edit_text(" ¿Qué quieres comprar?", reply_markup=InlineKeyboardMarkup(botones))
-        return
+        if hambre >= 60:
+            respuesta = "Tu hermana tiene mucha hambre para eso"
+        else:
+            botones = [
+                [InlineKeyboardButton(f"{item} - ${info['precio']}", callback_data=f"buy_{item}")]
+                for item, info in productos.items()
+            ]
+            botones.append([InlineKeyboardButton("Volver", callback_data="volver")])
+            query.message.edit_text("¿Qué quieres comprar?", reply_markup=InlineKeyboardMarkup(botones))
+            return
 
     elif accion.startswith("buy_"):
         nombre = accion.replace("buy_", "")
@@ -144,7 +179,6 @@ def responder(_, query):
     else:
         respuesta = "Comando no reconocido."
 
-
     guardar_datos()
     query.answer()
     query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=generar_menu_principal())
@@ -152,6 +186,7 @@ def responder(_, query):
 def generar_menu_principal():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("Jugar", callback_data="jugar")],
+        [InlineKeyboardButton("Conversar", callback_data="conversar")],
         [InlineKeyboardButton("Comer", callback_data="comer_menu")],
         [InlineKeyboardButton("Compra Online", callback_data="comprar_menu")],
         [InlineKeyboardButton("Dormir", callback_data="dormir")],
