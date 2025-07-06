@@ -107,6 +107,7 @@ async def manejar_acto(app, query):
     acto = usuarios_acto[uid]
     callback_query = query #Duplicar la variable porque me sa flojera editar todo
     data = query.data
+    await actualizar_progresos() 
     
     if data == "acto_start":
         generar_menu(uid)
