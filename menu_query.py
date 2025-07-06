@@ -90,19 +90,29 @@ def manejar_callback(app, query):
             f"Dinero: ${estado['dinero']}\n" + formato_tiempo(uid)
         )
 
-    elif accion == "dormir":
-        if hambre >= 80:
-            respuesta = "Tu hermana no puede dormir por el hambre"
-        elif estado["energia"] >= 100:
+    elif accion.startswith("dormir"):
+        if accion == "dormir":
+            if hambre >= 80:
+                respuesta = "Tu hermana no puede dormir por el hambre"
+            elif estado["energia"] >= 100:
             respuesta = "La hermanita no tiene sueño aún"
-        else:
-            estado["energia"] += 100
-            estado["hambre"] += 10
-            estado["animo"] -= random.randint(50, 100)
-            estado["felicidad"] -= random.randint(50, 100)
-            aburrimiento.pop(uid, None)
-            avanzar_tiempo_noche(uid)
-            respuesta = "Tu hermanita durmió profundamente y recuperó energía."
+                else:
+            
+                query.message.edit_text(
+              
+                    "Tu hermanita se acuesta en la cama.",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("Dormir también", callback_data="dormir_confirm")],
+                        [InlineKeyboardButton("Invadir su cama", callback_data="acto_start")]
+                    ])
+        if accion == "dormir_cofirm":
+                    estado["energia"] += 100
+                    estado["hambre"] += 10
+                    estado["animo"] -= random.randint(50, 100)
+                    estado["felicidad"] -= random.randint(50, 100)
+                    aburrimiento.pop(uid, None)
+                    avanzar_tiempo_noche(uid)
+                    respuesta = "Tu hermanita durmió profundamente y recuperó energía."
 
     elif accion == "jugar":
         if hambre >= 60:
