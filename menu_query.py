@@ -1,10 +1,11 @@
-# menu_query.py
-
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from modelo import estado_hermana, consumir_item
 from tienda import productos, comprar_producto
 from tiempo import avanzar_tiempo, formato_tiempo, avanzar_tiempo_noche
 from persistencia import guardar_datos
+from textos import (
+    JUGO_EXITOSO, NO_QUIERE_JUGAR, CONVERSACION, COMIO, NO_HAY_HAMBRE, aleatorio
+)
 from datetime import datetime
 import random
 
@@ -69,7 +70,7 @@ def manejar_callback(app, query):
         if hambre >= 60:
             respuesta = "Tu hermana tiene mucha hambre para eso"
         elif aburrimiento.get(uid, {}).get("jugar", 0) >= 100:
-            respuesta = "Tu hermana no quiere jugar"
+            respuesta = aleatorio(NO_QUIERE_JUGAR)
         elif estado["energia"] < 15 or estado["hora"].hour >= 22:
             respuesta = "La hermana está muy cansada. Solo quiere dormir."
         else:
@@ -77,13 +78,13 @@ def manejar_callback(app, query):
             estado["energia"] -= 10
             avanzar_tiempo(uid)
             actualizar_aburrimiento(uid, "jugar")
-            respuesta = "Jugaron juntos y se divirtieron bastante."
+            respuesta = aleatorio(JUGO_EXITOSO)
 
     elif accion == "conversar":
         if hambre >= 60:
             respuesta = "Tu hermana tiene mucha hambre para eso"
         elif aburrimiento.get(uid, {}).get("conversar", 0) >= 100:
-            respuesta = "Tu hermana no quiere conversar"
+            respuesta = aleatorio(NO_QUIERE_JUGAR)
         elif estado["energia"] < 10 or estado["hora"].hour >= 22:
             respuesta = "Tu hermana está muy cansada para hablar."
         else:
@@ -92,7 +93,7 @@ def manejar_callback(app, query):
             estado["energia"] -= 8
             avanzar_tiempo(uid)
             actualizar_aburrimiento(uid, "conversar")
-            respuesta = "Conversaron un rato sobre cosas bonitas."
+            respuesta = aleatorio(CONVERSACION)
 
     elif accion == "comer_menu":
         botones = [
@@ -100,7 +101,7 @@ def manejar_callback(app, query):
             for item, cantidad in estado["inventario"].items() if cantidad > 0
         ]
         if estado["hambre"] == 0 or estado["hora"].hour >= 22:
-            respuesta = "Tu hermana no tiene hambre"
+            respuesta = aleatorio(NO_HAY_HAMBRE)
         if not botones:
             botones = [[InlineKeyboardButton("Inventario vacío", callback_data="volver")]]
         botones.append([InlineKeyboardButton("Volver", callback_data="volver")])
@@ -120,7 +121,7 @@ def manejar_callback(app, query):
                     estado[atributo] = max(0, min(100, estado[atributo] + delta))
                     texto_efecto += f" {atributo.capitalize()} {delta:+d}"
             avanzar_tiempo(uid)
-            respuesta = f"Tu hermanita comió {item} 🍴.{texto_efecto or ''}"
+            respuesta = aleatorio(COMIO) + texto_efecto
 
     elif accion == "comprar_menu":
         if hambre >= 60:
@@ -145,3 +146,4 @@ def manejar_callback(app, query):
     guardar_datos()
     query.answer()
     query.message.edit_text(respuesta + "\n" + formato_tiempo(uid), reply_markup=generar_menu_principal())
+            
