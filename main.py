@@ -62,11 +62,11 @@ def es_callback_menu(data):
         or data.startswith("dormir")
     )
 
-@app.on_callback_query()
+async @app.on_callback_query()
 def responder(app, query):
     accion = query.data
     if es_callback_menu(accion):
-        manejar_callback(app, query)
+        await manejar_callback(app, query)
     else:
         await manejar_acto(app, query)# Aquí puedes enrutar otros callbacks personalizados, si los defines aparte
         #query.answer("Esta acción será manejada en otro módulo.", show_alert=True)
