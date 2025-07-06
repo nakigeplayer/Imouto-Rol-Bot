@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import random
 import asyncio
 from modelo import inicializar_usuario, estado_hermana, consumir_item
+from main import marcar_acto_terminado
 
 # --- Estados del Juego ---
 usuarios = {}  # Guarda ánimo, felicidad, energía
@@ -26,7 +27,9 @@ def iniciar_acto():
         "molestia_chica": 0,
         "mult_jugador": 1.0,
         "mult_chica": 1.0,
+        "mult_chica2": 0.0,
         "mult_molestia": 1.0,
+        "mult_molestia2": 2.0,
         "despierta": False,
         "ropa": {
             "blusa": True,
@@ -37,40 +40,59 @@ def iniciar_acto():
         "last_update": datetime.now()
     }
 
-# --- Actualización Automática (Cada 5 segundos) ---
 async def actualizar_progresos():
     while True:
         try:
             await asyncio.sleep(5)
             now = datetime.now()
-            
-            # Usar copia para evitar problemas durante iteración
+
             for uid, acto in usuarios_acto.copy().items():
-                # Calcular tiempo transcurrido
                 elapsed = (now - acto["last_update"]).total_seconds()
                 if elapsed < 5:
                     continue
 
-                # estado del usuario
                 estado = estado_hermana.get(uid, estado_inicial())
+                animo = estado["animo"]
+                felicidad = estado["felicidad"]
 
-                # Actualizar valores
+                # Cálculo de divisiones para mult_chica2
+                div_animo, temp_animo = 0, animo
+                while temp_animo >= 5:
+                    temp_animo /= 5
+                    div_animo += 1
+
+                div_felicidad, temp_felicidad = 0, felicidad
+                while temp_felicidad >= 5:
+                    temp_felicidad /= 5
+                    div_felicidad += 1
+
+                acto["mult_chica2"] = ((animo + felicidad) / 2) + ((div_animo + div_felicidad) / 2)
+
+                # mult_molestia2
+                acto["mult_molestia2"] = ((div_felicidad + div_animo) / 2) + ((5 - animo + 5 - felicidad) * 2)
+
                 acto["exitacion_jugador"] = min(100, acto["exitacion_jugador"] + acto["mult_jugador"])
-                
-                if acto["despierta"]:
-                    acto["exitacion_chica"] = min(100, acto["exitacion_chica"] + acto["mult_chica"] * (1 + estado["animo"]/100 + estado["felicidad"]/100))
-                
-                acto["molestia_chica"] = min(100, acto["molestia_chica"] + acto["mult_molestia"] * (1 - estado["animo"]/200 - estado["felicidad"]/200))
 
-                # Probabilidad de despertar (inversa a energía)
+                if acto["despierta"]:
+                    acto["exitacion_chica"] = min(
+                        100,
+                        acto["exitacion_chica"] + acto["mult_chica2"]
+                    )
+
+                acto["molestia_chica"] = min(
+                    100,
+                    acto["molestia_chica"] + acto["mult_molestia2"]
+                )
+
                 if not acto["despierta"] and random.random() < (100 - estado["energia"]) / 200:
                     acto["despierta"] = True
 
                 acto["last_update"] = now
-                
+
         except Exception as e:
             print(f"Error en actualización: {e}")
-            await asyncio.sleep(10)  # Espera antes de reintentar
+            await asyncio.sleep(10)
+
 
 # --- Iniciar tarea de actualización ---
 def iniciar_tarea_actualizacion():
@@ -190,10 +212,13 @@ async def manejar_acto(app, query):
     mensaje = None
     if acto["exitacion_jugador"] >= 100:
         mensaje = "Has llegado al clímax. Fin del juego."
+        marcar_acto_terminado(uid)
     elif acto["exitacion_chica"] >= 100:
         mensaje = "La chica tuvo un orgasmo. ¡Éxito!"
+        marcar_acto_terminado(uid)
     elif acto["molestia_chica"] >= 100:
         mensaje = "La chica está demasiado molesta. Fin del juego."
+        marcar_acto_terminado(uid)
 
     if mensaje:
         await callback_query.edit_message_text(mensaje)
