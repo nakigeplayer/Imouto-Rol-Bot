@@ -68,7 +68,7 @@ def responder(app, query):
     if es_callback_menu(accion):
         manejar_callback(app, query)
     else:
-        manejar_acto(app, query)# Aquí puedes enrutar otros callbacks personalizados, si los defines aparte
+        await manejar_acto(app, query)# Aquí puedes enrutar otros callbacks personalizados, si los defines aparte
         #query.answer("Esta acción será manejada en otro módulo.", show_alert=True)
 
     
