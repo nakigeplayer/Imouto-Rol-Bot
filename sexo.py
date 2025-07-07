@@ -19,6 +19,7 @@ def estado_inicial():
     }
 
 def iniciar_acto():
+    estado = estado_hermana[uid]
     return {
         "exitacion_jugador": 0,
         "exitacion_chica": 0,
