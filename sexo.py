@@ -153,7 +153,14 @@ async def manejar_acto(app, query):
 
     elif data == "masturbar_chica":
         if acto["ropa"]["pantis"]:
-            (random.choice([lambda: acto.update({"mult_chica": acto["mult_chica"] + 0.3}), lambda: acto.update({"mult_molestia": acto["mult_molestia"] + 0.4}), lambda: (acto.update({"mult_chica": acto["mult_chica"] + 0.3, "mult_molestia": acto["mult_molestia"] + 0.1}))], weights=[70, 20, 10])())()
+            random.choices([
+                lambda: acto.update({"mult_chica": acto["mult_chica"] + 0.3}),
+                lambda: acto.update({"mult_molestia": acto["mult_molestia"] + 0.4}),
+                lambda: acto.update({
+                    "mult_chica": acto["mult_chica"] + 0.3,
+                    "mult_molestia": acto["mult_molestia"] + 0.1
+                }),
+            ], weights=[70, 20, 10])[0]()  # ← Escoge la función y la ejecuta
         else:
             acto["mult_chica"] += 0.5 if acto["ropa"]["piernas_abiertas"] else 0.3
         await query.answer("Masturbaste a tu hermana", show_alert=True)
