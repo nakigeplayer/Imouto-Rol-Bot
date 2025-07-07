@@ -68,7 +68,7 @@ async def actualizar_progresos():
 
 # --- Generar Menú ---
 def generar_menu(uid):
-    acto = usuarios_acto.get(uid, iniciar_acto())
+    acto = usuarios_acto.get(uid, iniciar_acto(uid))
     botones = []
 
     # Opciones siempre disponibles
