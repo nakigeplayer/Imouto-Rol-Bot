@@ -26,7 +26,7 @@ def iniciar_acto():
         "mult_jugador": 1.0,
         "mult_chica": 1.0,
         "mult_molestia": 1.0,
-        "sueño": 100 - estado["energia"]
+        "sueño": 100 - estado["energia"],
         "despierta": False,
         "ropa": {
             "blusa": True,
