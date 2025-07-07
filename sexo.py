@@ -119,6 +119,16 @@ def generar_menu_2(uid):
     if acto["exitacion_chica"] >= 100:
         acto["exitacion_chica"] = acto["exitacion_chica"] - random.randint(80, 100)
         acto["mult_chica"] = 0
+        estado["felicidad"] = estado["felicidad"] + random.randint(10, 50)
+        estado["animo"] = estado["felicidad"] + random.randint(10, 50)
+        acto["molestia_chica"] = max(
+            0,
+            acto["molestia_chica"] - random.randint(
+                int(acto["molestia_chica"] * 0.6),
+                int(acto["molestia_chica"])
+            )
+        )
+        estado["energia"] = estado["energia"] - random.randint(20, 30)
 
     if acto["exitacion_jugador"] >= 100:
         acto["exitacion_jugador"] = 0
@@ -219,17 +229,11 @@ async def manejar_acto(app, query):
     mensaje = None
     if acto["exitacion_jugador"] >= 100:
         mensaje = "Tu semen se desborda sobre el cuerpo de tu hermana"
-        
         acto["eyaculaciones"] = acto["eyaculaciones"] + 1
+        
     elif acto["exitacion_chica"] >= 100:
         mensaje = "Tu hermana tuvo un orgasmo"
-        estado["felicidad"] = estado["felicidad"] + random.randint(10, 50)
-        estado["animo"] = estado["felicidad"] + random.randint(10, 50)
-        
-        acto["molestia_chica"] -= random.randint(
-            int(acto["molestia_chica"] * 0.6),
-            int(acto["molestia_chica"])
-        )
+
     elif acto["molestia_chica"] >= 100:
         mensaje = "Tu hermana se enojo contigo"
         estado["felicidad"] = estado["felicidad"] - random.randint(80, 100)
