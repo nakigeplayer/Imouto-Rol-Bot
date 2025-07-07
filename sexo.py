@@ -114,6 +114,7 @@ def generar_menu(uid):
 
 def generar_menu_2(uid):
     acto = usuarios_acto.get(uid)
+    estado = estado_hermana[uid]
     botones = []
     botones.append([InlineKeyboardButton("Continuar", callback_data="acto_continue")])
     if acto["exitacion_chica"] >= 100:
