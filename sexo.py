@@ -31,6 +31,7 @@ def iniciar_acto(uid):
         "mult_chica2": 0.0,
         "mult_molestia": 1.0,
         "mult_molestia2": 2.0,
+        "sueño": 100 - estado["energia"],
         "despierta": False,
         "ropa": {
             "blusa": True,
@@ -152,13 +153,13 @@ async def manejar_acto(app, query):
 
     elif data == "masturbar_chica":
         if acto["ropa"]["pantis"]:
-            acto["mult_molestia"] += 0.4
+            (random.choice([lambda: acto.update({"mult_chica": acto["mult_chica"] + 0.3}), lambda: acto.update({"mult_molestia": acto["mult_molestia"] + 0.4}), lambda: (acto.update({"mult_chica": acto["mult_chica"] + 0.3, "mult_molestia": acto["mult_molestia"] + 0.1}))], weights=[70, 20, 10])())()
         else:
             acto["mult_chica"] += 0.5 if acto["ropa"]["piernas_abiertas"] else 0.3
         await query.answer("Masturbaste a tu hermana", show_alert=True)
 
     elif data == "abrir_piernas":
-        acto["ropa"]["piernas_abiertas"] = True
+        acto["piernas_abiertas"] = True
         acto["mult_molestia"] += 0.2
         await query.answer("Abriste las piernas de tu hermana", show_alert=True)
 
