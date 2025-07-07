@@ -226,8 +226,10 @@ async def manejar_acto(app, query):
         estado["felicidad"] = estado["felicidad"] + random.randint(10, 50)
         estado["animo"] = estado["felicidad"] + random.randint(10, 50)
         
-        acto["molestia_chica"] = max(0, acto["molestia_chica"] - random.randint(int(acto["molestia_chica"] * 0.6), acto["molestia_chica"]))
-
+        acto["molestia_chica"] -= random.randint(
+            int(acto["molestia_chica"] * 0.6),
+            int(acto["molestia_chica"])
+        )
     elif acto["molestia_chica"] >= 100:
         mensaje = "Tu hermana se enojo contigo"
         estado["felicidad"] = estado["felicidad"] - random.randint(80, 100)
