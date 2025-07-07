@@ -31,6 +31,7 @@ def iniciar_acto(uid):
         "mult_chica2": 0.0,
         "mult_molestia": 1.0,
         "mult_molestia2": 2.0,
+        "energia_sexual": 100,
         "sueño": 100 - estado["energia"],
         "despierta": False,
         "ropa": {
@@ -105,36 +106,36 @@ def generar_menu(uid):
     acto = usuarios_acto.get(uid, iniciar_acto(uid))
     botones = []
 
-    # Opciones siempre disponibles
-    if not acto["penetracion"]:
-        botones.append([InlineKeyboardButton("Masturbarse", callback_data="masturbar_jugador")])
-
-    # Opciones de desvestir
-    if acto["ropa"]["blusa"] or acto["ropa"]["falda"] or acto["ropa"]["pantis"]:
-        botones.append([InlineKeyboardButton("Desvestir", callback_data="desvestir_menu")])
-
-    # Tocar pechos (solo sin blusa)
-    if not acto["ropa"]["blusa"]:
-        botones.append([InlineKeyboardButton("Tocar pechos", callback_data="tocar_pechos")])
-
-    # Masturbación (solo sin falda)
-    if not acto["ropa"]["falda"]:
-        botones.append([InlineKeyboardButton("Masturbarla", callback_data="masturbar_chica")])
-
-    # Abrir piernas (solo si están cerradas)
-    if not (acto["ropa"]["falda"] or acto["piernas_abiertas"]):
-        botones.append([InlineKeyboardButton("Abrir piernas", callback_data="abrir_piernas")])
-    elif not acto["ropa"]["pantis"]:
+    # Verificar si la energía sexual es <= 0 (solo muestra "Dormir")
+    if acto.get("energia_sexual", 1) <= 0:  
+        botones.append([InlineKeyboardButton("Ir a dormir", callback_data="dormir_confirm")])
+    else:
+        # Opciones normales (solo si hay energía sexual > 0)
         if not acto["penetracion"]:
-            botones.append([InlineKeyboardButton("Rozar vagina", callback_data="rozar_vagina")])
-            botones.append([InlineKeyboardButton("Penetrar", callback_data="penetrar")])
-        if acto["penetracion"]:
-            botones.append([InlineKeyboardButton("Moverse", callback_data="moverse")])
+            botones.append([InlineKeyboardButton("Masturbarse", callback_data="masturbar_jugador")])
 
-    botones.append([InlineKeyboardButton("Ir a dormir", callback_data="dormir_confirm")])
+        if acto["ropa"]["blusa"] or acto["ropa"]["falda"] or acto["ropa"]["pantis"]:
+            botones.append([InlineKeyboardButton("Desvestir", callback_data="desvestir_menu")])
+
+        if not acto["ropa"]["blusa"]:
+            botones.append([InlineKeyboardButton("Tocar pechos", callback_data="tocar_pechos")])
+
+        if not acto["ropa"]["falda"]:
+            botones.append([InlineKeyboardButton("Masturbarla", callback_data="masturbar_chica")])
+
+        if not (acto["ropa"]["falda"] or acto["piernas_abiertas"]):
+            botones.append([InlineKeyboardButton("Abrir piernas", callback_data="abrir_piernas")])
+        elif not acto["ropa"]["pantis"]:
+            if not acto["penetracion"]:
+                botones.append([InlineKeyboardButton("Rozar vagina", callback_data="rozar_vagina")])
+                botones.append([InlineKeyboardButton("Penetrar", callback_data="penetrar")])
+            if acto["penetracion"]:
+                botones.append([InlineKeyboardButton("Moverse", callback_data="moverse")])
+
+        botones.append([InlineKeyboardButton("Ir a dormir", callback_data="dormir_confirm")])
 
     return InlineKeyboardMarkup(botones)
-
+    
 def generar_menu_2(uid):
     acto = usuarios_acto.get(uid)
     estado = estado_hermana[uid]
@@ -153,10 +154,12 @@ def generar_menu_2(uid):
             )
         )
         estado["energia"] = estado["energia"] - random.randint(20, 30)
+        acto["energia_sexual"] = acto["energia_sexual"] - random.randint(10, 20)
 
     if acto["exitacion_jugador"] >= 100:
         acto["exitacion_jugador"] = 0
         acto["mult_jugador"] = 0
+        acto["energia_sexual"] = acto["energia_sexual"] - random.randint(20, 30)
     return InlineKeyboardMarkup(botones)
     
 # --- Manejador de Callbacks ---
@@ -263,6 +266,12 @@ async def manejar_acto(app, query):
         estado["felicidad"] = estado["felicidad"] - random.randint(80, 100)
         estado["animo"] = estado["animo"] - random.randint(80, 100)
         await callback_query.edit_message_text(mensaje)
+        usuarios_acto.pop(uid, None)
+        marcar_acto_terminado_2(uid)
+
+    elif acto.get("energia_sexual", 1) <= 0:
+        mensaje = "Ambos han llegado al límite, eso es todo por hoy"
+        await callback_query.edit_message_text(mensaje, reply_markup=generar_menu(uid))
         usuarios_acto.pop(uid, None)
         marcar_acto_terminado_2(uid)
 
