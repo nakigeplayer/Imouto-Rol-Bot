@@ -18,7 +18,7 @@ def estado_inicial():
         "energia": 80
     }
 
-def iniciar_acto():
+def iniciar_acto(uid):
     estado = estado_hermana[uid]
     return {
         "exitacion_jugador": 0,
@@ -104,7 +104,7 @@ async def manejar_acto(app, query):
 
     estado = estado_hermana[uid]
     if uid not in usuarios_acto:
-        usuarios_acto[uid] = iniciar_acto()
+        usuarios_acto[uid] = iniciar_acto(uid)
         
     acto = usuarios_acto[uid]
     callback_query = query #Duplicar la variable porque me sa flojera editar todo
