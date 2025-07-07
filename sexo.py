@@ -113,7 +113,7 @@ def generar_menu(uid):
     return InlineKeyboardMarkup(botones)
 
 def generar_menu_2(uid):
-    acto = usuarios_acto.get(uid, iniciar_acto())
+    acto = usuarios_acto.get(uid)
     botones = []
     botones.append([InlineKeyboardButton("Continuar", callback_data="acto_continue")])
     if acto["exitacion_chica"] >= 100:
