@@ -169,7 +169,7 @@ async def manejar_acto(app, query):
                 }),
             ], weights=[70, 20, 10])[0]()  # ← Escoge la función y la ejecuta
         else:
-            acto["mult_chica"] += 0.5 if acto["ropa"]["piernas_abiertas"] else 0.3
+            acto["mult_chica"] += 0.5 if acto["piernas_abiertas"] else 0.3
         await query.answer("Masturbaste a tu hermana", show_alert=True)
 
     elif data == "abrir_piernas":
