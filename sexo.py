@@ -203,3 +203,15 @@ async def manejar_acto(app, query):
                 texto_modificado,
                 reply_markup=generar_menu(uid)
             )
+
+
+# Función para limpiar al detener el bot
+async def detener_actualizacion():
+    global tarea_actualizacion
+    if tarea_actualizacion:
+        tarea_actualizacion.cancel()
+        try:
+            await tarea_actualizacion
+        except asyncio.CancelledError:
+            pass
+        tarea_actualizacion = None
