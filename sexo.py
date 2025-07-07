@@ -10,6 +10,7 @@ from modelo import inicializar_usuario, estado_hermana, consumir_item
 # --- Estados del Juego ---
 usuarios = {}  # Guarda ánimo, felicidad, energía
 usuarios_acto = {}  # Guarda progresos durante el acto
+tarea_actualizacion = None
 
 def estado_inicial():
     return {
